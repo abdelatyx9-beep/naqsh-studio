@@ -445,11 +445,155 @@ input[type=color]{width:28px;height:22px;padding:0;border:1px solid var(--line-2
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style>
+/* ===== Photoshop-like workspace ===== */
+body{padding:0!important}
+#app{border:0;border-radius:0}
+.topbar{height:32px;gap:6px;padding:0 6px}
+.brand{font-size:15px;gap:6px}
+.brand .pslogo{width:22px;height:22px;border-radius:4px;background:#001e36;border:1.5px solid #31a8ff;color:#31a8ff;display:grid;place-items:center;font:700 11px/1 var(--f-ui);letter-spacing:-.02em}
+.brand svg{display:none}
+.menu-btn{padding:4px 9px;font-size:12.5px;border-radius:3px}
+.btn{border-radius:4px}
+.home-btn{background:none;border-color:transparent;color:var(--fg)}
+.home-btn span{display:none}
+.ws-tabs{border-radius:5px;padding:2px}.ws-tabs button{padding:3px 12px;border-radius:3px;font-size:12px}
+.optbar{min-height:38px;padding:3px 8px;gap:10px;font-size:12px}
+.optbar .ob-ic{width:30px;height:28px;display:grid;place-items:center;border:0;background:none;color:var(--fg);border-radius:3px;flex:none}
+.optbar .ob-ic:hover{background:var(--panel-3)}
+.optbar .ob-ic svg{width:18px;height:18px}
+.optbar .ob-tool{display:flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid var(--line-2);border-radius:3px;color:var(--fg);flex:none}
+.optbar .ob-tool svg{width:17px;height:17px}
+.optbar .ob-sep{width:1px;align-self:stretch;margin:4px 2px;background:var(--line-2);flex:none}
+.optbar .ob-al{display:flex;gap:1px;flex:none}
+.optbar .ob-al button{width:28px;height:26px;border:0;background:none;color:var(--fg);border-radius:3px;display:grid;place-items:center}
+.optbar .ob-al button:hover{background:var(--panel-3)}.optbar .ob-al svg{width:17px;height:17px}
+.optbar .tname{display:none}
+.work{grid-template-columns:42px minmax(0,1fr) 38px 290px}
+.work>.dock{direction:rtl}
+.toolbar{padding:4px 0;gap:0}
+.tool{width:34px;height:30px;border-radius:3px}
+.tool svg{width:18px;height:18px}
+.tool.on{background:var(--panel-3);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line-2)}
+.tool.grp::after{content:"";position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:4px solid transparent;border-bottom:4px solid currentColor;opacity:.75}
+.tsep{width:24px;margin:3px 0}
+.tflyout{position:fixed;z-index:70;background:var(--pop);border:1px solid var(--line-2);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:3px;min-width:230px}
+.tflyout button{display:grid;grid-template-columns:14px 22px 1fr auto;gap:8px;align-items:center;width:100%;border:0;background:none;color:var(--fg);padding:6px 8px;border-radius:3px;text-align:start;font-size:12.5px}
+.tflyout button:hover{background:var(--accent);color:#fff}
+.tflyout button svg{width:18px;height:18px}.tflyout kbd{font-family:var(--f-mono);font-size:11px;opacity:.7}
+.dock{background:var(--panel);border-left:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;overflow-y:auto;scrollbar-width:none}
+.dock button{width:30px;height:30px;border:0;background:none;color:var(--muted);border-radius:3px;display:grid;place-items:center;flex:none}
+.dock button:hover{color:var(--fg);background:var(--panel-3)}
+.dock button.on{background:var(--panel-3);color:var(--fg);box-shadow:inset 2px 0 0 var(--accent)}
+.dock button svg{width:18px;height:18px}
+.dock hr{width:22px;border:0;border-top:1px solid var(--line-2);margin:4px 0}
+.doctab{height:26px;padding-left:0;background:var(--bg)}
+.doctab span{border-radius:0;border-top:0;border-left:0;padding:5px 26px 5px 12px;font-size:11.5px;background:var(--panel);position:relative}
+.doctab span::after{content:"×";position:absolute;right:8px;top:4px;color:var(--dim)}
+.ruler{position:absolute;z-index:2;display:block;direction:ltr}
+.ruler.rh{top:26px;left:18px;right:0;height:18px;width:calc(100% - 18px)}
+.ruler.rv{top:44px;left:0;width:18px;height:calc(100% - 44px)}
+.ruler-corner{position:absolute;z-index:2;top:26px;left:0;width:18px;height:18px;background:var(--panel);border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer}
+.viewport.norulers .ruler,.viewport.norulers .ruler-corner{display:none}
+.steps{top:52px}
+.zoom-float{border-radius:4px}
+.panels{border-left:0}
+.ptabs{background:var(--bg);border-bottom:1px solid var(--line)}
+.ptabs button{flex:none;padding:6px 11px;font-size:11.5px;border-bottom:0;border-right:1px solid var(--line);color:var(--muted)}
+.ptabs button.on{background:var(--panel);color:var(--fg)}
+.pgroup.bottom{border-top:6px solid var(--bg);flex:1 1 50%}
+.pgroup.top{flex:1 1 50%}
+.lptabs{padding:0!important;background:var(--bg)!important;justify-content:flex-start!important;gap:0}
+.lptabs button{background:none;border:0;border-right:1px solid var(--line);padding:6px 12px;color:var(--muted);font-size:11.5px;font-weight:600}
+.lptabs button.on{background:var(--panel);color:var(--fg)}
+.lp{display:flex;flex-direction:column;min-height:100%}
+.lp-bar{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.lp-bar select,.lp-bar input[type=number],.lp-bar input[type=search]{background:var(--ground);border:1px solid var(--line-2);border-radius:3px;padding:2px 4px;font-size:11.5px;color:var(--fg);min-width:0}
+.lp-bar input[type=number]{width:56px;direction:ltr}
+.lp-bar select{flex:1}
+.lp-bar .ib{width:24px;height:22px;border:0;background:none;color:var(--muted);border-radius:3px;display:grid;place-items:center;padding:0}
+.lp-bar .ib svg{width:15px;height:15px}.lp-bar .ib:hover{color:var(--fg);background:var(--panel-3)}.lp-bar .ib.on{color:var(--fg);background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.lp-bar .grow{flex:1}
+.lp-list{flex:1;overflow-y:auto;min-height:60px}
+.lp .lrow{grid-template-columns:22px 14px auto 1fr auto;border-radius:0;border:0;border-bottom:1px solid var(--line);padding:4px 6px;gap:6px;min-height:40px}
+.lp .lrow.on{background:var(--panel-3);border-color:var(--line)}
+.lp .lrow canvas{width:40px;height:30px;border-radius:0;background:repeating-conic-gradient(#cfcfcf 0 25%,#fff 0 50%) 0 0/8px 8px;border:1px solid #111}
+.lp .lrow .th{display:flex;gap:3px;align-items:center}
+.lp .lrow .th canvas.sel{outline:2px solid #fff;outline-offset:1px}
+.lp .lrow .lk{color:var(--dim);font-size:10px;display:grid;place-items:center}
+.lp .lrow .lk svg{width:11px;height:11px}
+.lp .lrow .adjic{width:40px;height:30px;display:grid;place-items:center;border:1px solid #111;background:var(--panel-2)}
+.lp .lrow .adjic svg{width:20px;height:20px}
+.lp-foot{display:flex;justify-content:flex-end;gap:2px;padding:4px 6px;border-top:1px solid var(--line);background:var(--panel);position:sticky;bottom:0}
+.lp-foot button{width:28px;height:26px;border:0;background:none;color:var(--muted);border-radius:3px;display:grid;place-items:center;padding:0}
+.lp-foot button:hover{color:var(--fg);background:var(--panel-3)}.lp-foot button svg{width:16px;height:16px}
+.ctxm{position:fixed;z-index:75;background:var(--pop);border:1px solid var(--line-2);border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:3px;min-width:200px;max-height:70vh;overflow:auto}
+.ctxm button{display:block;width:100%;text-align:start;border:0;background:none;color:var(--fg);padding:6px 10px;border-radius:3px;font-size:12.5px}
+.ctxm button:hover{background:var(--accent);color:#fff}.ctxm hr{border:0;border-top:1px solid var(--line);margin:3px}
+.ctxm .grp{font-size:11px;color:var(--dim);padding:5px 10px 2px}
+.status{font-size:11px;padding:3px 10px;gap:18px}
+.chan{display:grid;grid-template-columns:22px 48px 1fr auto;gap:8px;align-items:center;padding:5px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+.chan canvas{width:48px;height:34px;border:1px solid #111;background:#000}
+.chan.on{background:var(--panel-3)}
+.chan kbd{font-family:var(--f-mono);font-size:11px;color:var(--dim)}
+.navbox{position:relative;background:var(--ground);border:1px solid var(--line);align-self:center}
+.navbox canvas{display:block;max-width:100%}
+.navbox i{position:absolute;border:2px solid #e33;pointer-events:none}
+.histo{width:100%;height:120px;background:var(--ground);border:1px solid var(--line);display:block}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-family:var(--f-mono);font-size:12px;direction:ltr}
+.info-grid b{color:var(--muted);font-weight:500;margin-inline-end:6px}
+.adjgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.adjgrid button{aspect-ratio:1;border:1px solid var(--line);background:var(--panel-2);border-radius:3px;color:var(--fg);display:grid;place-items:center;padding:0}
+.adjgrid button:hover{border-color:var(--accent)}.adjgrid button svg{width:20px;height:20px}
+/* PS new document dialog */
+.dlg.psnd-dlg{width:min(1120px,100%);border-radius:6px;height:min(720px,calc(100vh - 40px))}
+.dlg.psnd-dlg .body{padding:0;flex:1;min-height:0}
+.psnd{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0;height:100%;width:100%;min-width:0}.psnd>*{min-width:0}.psnd-r .row>*{min-width:0}
+.psnd-l{display:flex;flex-direction:column;min-height:0;border-inline-end:1px solid var(--line)}
+.psnd-tabs{display:flex;gap:2px;padding:10px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.psnd-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:8px 12px;font-weight:600;white-space:nowrap}
+.psnd-tabs button.on{color:var(--fg);border-bottom-color:var(--fg)}
+.psnd-sub{padding:12px 18px 4px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+.psnd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:8px 16px 16px;overflow-y:auto;align-content:start}
+.psnd-card{background:var(--panel-2);border:2px solid transparent;border-radius:4px;padding:14px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--fg);text-align:center}
+.psnd-card:hover{background:var(--panel-3)}
+.psnd-card.on{border-color:var(--accent);background:var(--panel-3)}
+.psnd-card .ic{height:64px;display:grid;place-items:center}
+.psnd-card .ic i{display:block;background:var(--muted);border-radius:1px;opacity:.9}
+.psnd-card b{font-weight:600;font-size:12.5px}
+.psnd-card small{color:var(--muted);font-size:11px;direction:ltr}
+.psnd-r{display:flex;flex-direction:column;gap:10px;padding:14px 18px;overflow-y:auto;min-height:0}
+.psnd-r h4{margin:0;font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.psnd-r .nm{background:none;border:0;border-bottom:1px solid var(--line-2);padding:6px 0;font-size:18px;color:var(--fg);width:100%}
+.psnd-r label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.psnd-r .row{display:flex;gap:6px;align-items:center}
+.psnd-r input[type=number],.psnd-r select{background:var(--ground);border:1px solid var(--line-2);border-radius:3px;padding:5px 6px;color:var(--fg);min-width:0}
+.psnd-r input[type=number]{flex:1;direction:ltr}
+.psnd-r .orient{display:flex;gap:4px}
+.psnd-r .orient button{width:34px;height:30px;border:1px solid var(--line-2);background:var(--panel-2);border-radius:3px;display:grid;place-items:center;color:var(--muted)}
+.psnd-r .orient button.on{border-color:var(--accent);color:var(--fg)}
+.psnd-r .orient i{display:block;border:1.5px solid currentColor}
+.psnd-r .bgsw{width:30px;height:28px;border:1px solid var(--line-2);border-radius:3px;padding:0;flex:none}
+.psnd-r .meta{font-size:11px;color:var(--dim);direction:ltr;text-align:end}
+@media (max-width:1100px){ .work{grid-template-columns:42px minmax(0,1fr) 38px 260px} }
+@media (max-width:820px){
+  .topbar{height:auto}
+  .work{grid-template-columns:46px 1fr}
+  .dock,.ruler,.ruler-corner{display:none!important}
+  .steps{top:6px}
+  .optbar .ob-al{display:none}
+  .psnd{grid-template-columns:1fr;height:auto}
+  .dlg.psnd-dlg{height:auto}
+  .psnd-l{border:0;border-bottom:1px solid var(--line)}
+  .psnd-grid{grid-template-columns:repeat(2,1fr);max-height:34vh}
+  .psnd-card{padding:8px}.psnd-card .ic{height:44px}.psnd-card .ic i{transform:scale(.72)}
+}
+</style>
 
 <div id="app">
   <header class="topbar">
     <div class="tb-start">
-      <div class="brand" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19 12 4l8 15" stroke="#e7b04a" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="14" r="2.4" fill="#d99a2b"/></svg><span>نقش</span></div>
+      <div class="brand" title="الصفحة الرئيسية"><i class="pslogo">نق</i><svg viewBox="0 0 24 24" fill="none"><path d="M4 19 12 4l8 15" stroke="#e7b04a" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="14" r="2.4" fill="#d99a2b"/></svg><span>نقش</span></div>
       <button class="btn sm home-btn" id="btnHome" title="الصفحة الرئيسية: ابدأ مشروعاً جديداً أو افتح عملاً سابقاً"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>الرئيسية</span></button>
       <span class="tb-sep"></span>
     </div>
@@ -475,6 +619,7 @@ input[type=color]{width:28px;height:22px;padding:0;border:1px solid var(--line-2
       <aside class="toolbar" id="toolbar" aria-label="الأدوات"></aside>
       <main class="viewport" id="viewport">
         <div class="doctab"><span id="docTab">—</span></div>
+        <canvas class="ruler rh" id="rulerH" title="اسحب من المسطرة لإنشاء دليل"></canvas><canvas class="ruler rv" id="rulerV" title="اسحب من المسطرة لإنشاء دليل"></canvas><div class="ruler-corner" id="rulerC" title="المساطر (Ctrl+R)"></div>
         <div class="steps" id="steps"><b>ابدأ من هنا:</b><button data-s="img"><i>١</i>أضف صورة</button><button data-s="looks"><i>٢</i>فلتر</button><button data-s="frames"><i>٣</i>إطار</button><button data-s="text"><i>٤</i>نص</button><button data-s="export"><i>٥</i>صدّر</button><button class="x" data-s="hide" title="إخفاء الخطوات" aria-label="إخفاء الخطوات">✕</button></div>
         <canvas id="view"></canvas>
         <div class="drop-hint" id="dropHint" hidden>أفلت الصورة هنا لإضافتها</div>
@@ -482,6 +627,7 @@ input[type=color]{width:28px;height:22px;padding:0;border:1px solid var(--line-2
           <button id="zOut" title="تصغير">−</button><span id="zLabel">100%</span><button id="zIn" title="تكبير">+</button><button id="zFit" title="ملاءمة الشاشة">⤢</button><button id="zHelp" title="شرح الأداة الحالية" aria-label="شرح الأداة الحالية">؟</button><button id="zUndo" title="تراجع (Ctrl+Z)" aria-label="تراجع">↶</button><button id="zRedo" title="إعادة" aria-label="إعادة">↷</button>
         </div>
       </main>
+      <aside class="dock" id="dock" aria-label="اللوحات"></aside>
       <aside class="panels" id="panels">
         <div class="pgroup top">
           <div class="ptabs" id="ptabs">
@@ -497,7 +643,7 @@ input[type=color]{width:28px;height:22px;padding:0;border:1px solid var(--line-2
           <div class="pbody" id="pbody"></div>
         </div>
         <div class="pgroup bottom">
-          <div class="phead ps"><span>الطبقات</span></div>
+          <div class="phead ps lptabs" id="lpTabs"><button data-lp="layers" class="on">الطبقات</button><button data-lp="channels">القنوات</button><button data-lp="paths">المسارات</button></div>
           <div class="pbody" id="lbody"></div>
         </div>
       </aside>
@@ -667,7 +813,7 @@ function hasFx(fx) { return fx && (fx.shadow?.on || fx.glow?.on || fx.stroke?.on
 const FX_DEFAULT = () => ({ shadow: { on: false, color: '#000000', opacity: .6, angle: 120, dist: 14, blur: 22 }, glow: { on: false, color: '#ffd27a', opacity: .9, size: 24 }, stroke: { on: false, color: '#ffffff', size: 6 }, overlay: { on: false, color: '#e7b04a', opacity: 1 }, inner: { on: false, color: '#000000', opacity: .6, blur: 16 } });
 function silhouette(src, color) { const c = mkCanvas(src.width, src.height), x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); return c; }
 function fxRender(L) {
-  const fx = L.fx, key = L.ver + JSON.stringify(fx) + (L.canvas.width + 'x' + L.canvas.height);
+  const fx = L.fx, key = L.ver + '|' + L.fill + JSON.stringify(fx) + (L.canvas.width + 'x' + L.canvas.height);
   if (L.fxCache && L.fxCache.key === key) return L.fxCache;
   const src = L.canvas; const s = fx.shadow, g = fx.glow, st = fx.stroke;
   const pad = Math.ceil(Math.max(s.on ? s.dist + s.blur * 1.5 : 0, g.on ? g.size * 1.6 : 0, st.on ? st.size + 2 : 0)) + 2;
@@ -678,7 +824,7 @@ function fxRender(L) {
   const content = mkCanvas(src.width, src.height), cx = content.getContext('2d'); cx.drawImage(src, 0, 0);
   if (fx.inner?.on) { const inv = mkCanvas(src.width + 200, src.height + 200), ix = inv.getContext('2d'); ix.fillStyle = '#000'; ix.fillRect(0, 0, inv.width, inv.height); ix.globalCompositeOperation = 'destination-out'; ix.drawImage(src, 100, 100); cx.save(); cx.globalCompositeOperation = 'source-atop'; cx.globalAlpha = fx.inner.opacity; cx.shadowColor = fx.inner.color; cx.shadowBlur = fx.inner.blur; cx.shadowOffsetX = BIG; cx.drawImage(inv, -100 - BIG, -100); cx.restore(); }
   if (fx.overlay?.on) { cx.save(); cx.globalCompositeOperation = 'source-atop'; cx.globalAlpha = fx.overlay.opacity; cx.fillStyle = fx.overlay.color; cx.fillRect(0, 0, src.width, src.height); cx.restore(); }
-  o.drawImage(content, pad, pad);
+  o.globalAlpha = L.fill == null ? 1 : L.fill; o.drawImage(content, pad, pad); o.globalAlpha = 1;
   L.fxCache = { key, canvas: out, pad }; return L.fxCache;
 }
 
@@ -688,24 +834,42 @@ let docCanvas = mkCanvas(S.doc.w, S.doc.h), docCtx = docCanvas.getContext('2d');
 let docDirty = true, needRender = false, DPR = 1;
 const TF = { active: false };
 function requestRender(doc = true) { if (doc) docDirty = true; if (!needRender) { needRender = true; requestAnimationFrame(renderView); } }
-function drawLayer(ctx, L, alpha, gco) {
+function drawLayerRaw(ctx, L, alpha, gco) {
   ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = gco;
-  let src = L.canvas, ox = L.x, oy = L.y;
-  if (hasFx(L.fx)) { const r = fxRender(L); src = r.canvas; ox -= r.pad; oy -= r.pad; }
+  let src = L.canvas, ox = L.x, oy = L.y; const fill = L.fill == null ? 1 : L.fill;
+  if (hasFx(L.fx)) { const r = fxRender(L); src = r.canvas; ox -= r.pad; oy -= r.pad; } else if (fill < 1) ctx.globalAlpha = alpha * fill;
   const T = TF.active && TF.layer === L ? TF : null;
   if (T) { ctx.translate(T.cx + T.tx, T.cy + T.ty); ctx.rotate(T.rot); ctx.scale(T.sx, T.sy); ctx.translate(-T.cx, -T.cy); }
   if (L.rot) { const cx = L.x + L.canvas.width / 2, cy = L.y + L.canvas.height / 2; ctx.translate(cx, cy); ctx.rotate(L.rot); ctx.translate(-cx, -cy); }
   ctx.drawImage(src, ox, oy); ctx.restore();
 }
+function drawLayer(ctx, L, alpha, gco) {
+  if (L.type === 'adj') return;
+  if (L._mask && !L.maskOff) {
+    const t = temp('lmask', S.doc.w, S.doc.h), tx = t.getContext('2d'); drawLayerRaw(tx, L, 1, 'source-over');
+    tx.globalCompositeOperation = 'destination-in'; tx.drawImage(L._mask, 0, 0, S.doc.w, S.doc.h); tx.globalCompositeOperation = 'source-over';
+    ctx.save(); ctx.globalAlpha = alpha; ctx.globalCompositeOperation = gco; ctx.drawImage(t, 0, 0); ctx.restore(); return;
+  }
+  drawLayerRaw(ctx, L, alpha, gco);
+}
+/* non-destructive adjustment layer: applies to everything already composited below it */
+function applyAdjLayer(ctx, L, w, h) {
+  if (!L.adj || !ADJ[L.adj.k]) return;
+  const below = temp('adjsrc', w, h), bx = below.getContext('2d'); bx.drawImage(ctx.canvas, 0, 0);
+  try { runAdj(L.adj.k, below, L.adj.p || {}); } catch (e) { return; }
+  if (L._mask && !L.maskOff) { bx.globalCompositeOperation = 'destination-in'; bx.drawImage(L._mask, 0, 0, w, h); bx.globalCompositeOperation = 'source-over'; }
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = L.opacity; ctx.globalCompositeOperation = L.blend === 'source-over' ? 'source-atop' : L.blend; ctx.drawImage(below, 0, 0); ctx.restore();
+}
 function compositeTo(ctx, layers, w, h) {
   ctx.clearRect(0, 0, w, h);
   for (let i = 0; i < layers.length; i++) {
     const L = layers[i]; const clipped = []; let j = i + 1;
+    if (L.type === 'adj') { if (L.visible && ctx.canvas.width === w && ctx.canvas.height === h) applyAdjLayer(ctx, L, w, h); continue; }
     while (j < layers.length && layers[j].clip) { if (layers[j].visible) clipped.push(layers[j]); j++; }
     if (!L.visible) { i = j - 1; continue; }
     if (clipped.length) {
       const g = temp('group' + (ctx === docCtx ? '' : 'x'), w, h), gx = g.getContext('2d');
-      drawLayer(gx, L, 1, 'source-over'); clipped.forEach(c => drawLayer(gx, c, c.opacity, 'source-atop'));
+      drawLayer(gx, L, 1, 'source-over'); clipped.forEach(c => { if (c.type === 'adj') applyAdjLayer(gx, c, w, h); else drawLayer(gx, c, c.opacity, 'source-atop'); });
       ctx.save(); ctx.globalAlpha = L.opacity; ctx.globalCompositeOperation = L.blend; ctx.drawImage(g, 0, 0); ctx.restore();
       i = j - 1;
     } else drawLayer(ctx, L, L.opacity, L.blend);
@@ -752,7 +916,7 @@ setInterval(() => { if (S.sel) { antsPhase = (antsPhase + 1) % 1000; requestRend
 const VP = $('#viewport');
 function resizeView() { const r = VP.getBoundingClientRect(); DPR = window.devicePixelRatio || 1; view.width = Math.max(1, Math.round(r.width * DPR)); view.height = Math.max(1, Math.round(r.height * DPR)); requestRender(false); }
 new ResizeObserver(() => { const first = !view._sized; resizeView(); if (first || window.innerWidth <= 820) { view._sized = true; fitView(); } }).observe(VP);
-function fitView() { const r = VP.getBoundingClientRect(); if (!r.width) return; const top = window.innerWidth <= 820 ? 0 : 28, pad = window.innerWidth <= 820 ? 16 : 48; const z = Math.min((r.width - pad) / S.doc.w, (r.height - pad - top) / S.doc.h, 4); S.zoom = Math.max(.02, z); S.panX = (r.width - S.doc.w * S.zoom) / 2; S.panY = top + (r.height - top - S.doc.h * S.zoom) / 2; requestRender(false); }
+function fitView() { const r = VP.getBoundingClientRect(); if (!r.width) return; const top = window.innerWidth <= 820 ? 0 : (S.rulers ? 44 : 26), pad = window.innerWidth <= 820 ? 16 : 56; const z = Math.min((r.width - pad) / S.doc.w, (r.height - pad - top) / S.doc.h, 4); S.zoom = Math.max(.02, z); S.panX = (window.innerWidth > 820 && S.rulers ? 9 : 0) + (r.width - S.doc.w * S.zoom) / 2; S.panY = top + (r.height - top - S.doc.h * S.zoom) / 2; requestRender(false); }
 function zoomAt(f, sx, sy) { const r = VP.getBoundingClientRect(); if (sx == null) { sx = r.width / 2; sy = r.height / 2; } const nz = clamp(S.zoom * f, .02, 32); const px = (sx - S.panX) / S.zoom, py = (sy - S.panY) / S.zoom; S.zoom = nz; S.panX = sx - px * nz; S.panY = sy - py * nz; requestRender(false); }
 function toDoc(e) { const r = view.getBoundingClientRect(); return { x: (e.clientX - r.left - S.panX) / S.zoom, y: (e.clientY - r.top - S.panY) / S.zoom, sx: e.clientX - r.left, sy: e.clientY - r.top }; }
 function toScreen(x, y) { return { x: x * S.zoom + S.panX, y: y * S.zoom + S.panY }; }
@@ -760,7 +924,7 @@ function toScreen(x, y) { return { x: x * S.zoom + S.panX, y: y * S.zoom + S.pan
 /* ============================== history ============================== */
 const HIST = { stack: [], idx: -1, max: 40 };
 const ACC = () => (window.PREF && PREF.accentHex) || '#378ef0';
-function snapLayer(L) { if (L._snap && L._snapVer === L.ver) return L._snap; const s = { canvas: cloneCanvas(L.canvas) }; L._snap = s; L._snapVer = L.ver; return s; }
+function snapLayer(L) { if (L._snap && L._snapVer === L.ver) return L._snap; const s = { canvas: cloneCanvas(L.canvas), mask: L._mask ? cloneCanvas(L._mask) : null }; L._snap = s; L._snapVer = L.ver; return s; }
 function layerProps(L) { const p = {}; for (const k in L) { if (k === 'canvas' || k[0] === '_' || k === 'fxCache') continue; p[k] = L[k]; } return JSON.parse(JSON.stringify(p)); }
 function captureState(label) { return { label, doc: { ...S.doc }, active: S.active, layers: S.layers.map(L => ({ props: layerProps(L), snap: snapLayer(L) })) }; }
 function commit(label) {
@@ -771,7 +935,7 @@ function commit(label) {
 function restoreState(st) {
   const sizeChanged = st.doc.w !== S.doc.w || st.doc.h !== S.doc.h;
   S.doc = { ...st.doc }; S.active = st.active;
-  S.layers = st.layers.map(r => { const L = { ...JSON.parse(JSON.stringify(r.props)), canvas: cloneCanvas(r.snap.canvas) }; L._snap = r.snap; L._snapVer = L.ver; return L; });
+  S.layers = st.layers.map(r => { const L = { ...JSON.parse(JSON.stringify(r.props)), canvas: cloneCanvas(r.snap.canvas) }; if (r.snap.mask) L._mask = cloneCanvas(r.snap.mask); L._snap = r.snap; L._snapVer = L.ver; return L; });
   if (sizeChanged) { S.sel = null; fitView(); }
   requestRender(); PANELS.refresh(); scheduleSave();
 }
@@ -1674,12 +1838,12 @@ async function saveFile(name, blob) {
   DLG.open('ملفك جاهز', `<div class="note">اضغط مطولاً أو انقر بالزر الأيمن على الملف ثم اختر «حفظ».</div>${isI ? `<img src="${u}" alt="${esc(name)}" style="max-height:60vh;border-radius:8px;align-self:center">` : isV ? `<video src="${u}" controls style="max-height:60vh;border-radius:8px;width:100%"></video>` : `<div class="note">${esc(name)}</div>`}`, [btn('إغلاق', () => DLG.close())]);
 }
 async function projectFileBlob() {
-  const layers = S.layers.map(L => ({ props: layerProps(L), png: L.canvas.toDataURL('image/png') }));
+  const layers = S.layers.map(L => ({ props: layerProps(L), png: L.canvas.toDataURL('image/png'), mask: L._mask ? L._mask.toDataURL('image/png') : null }));
   return new Blob([JSON.stringify({ app: 'naqsh', v: 1, doc: S.doc, active: S.active, layers })], { type: 'application/json' });
 }
 async function loadProjectJSON(obj) {
   if (!obj || obj.app !== 'naqsh') throw new Error('bad');
-  const layers = await Promise.all(obj.layers.map(async r => { const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = r.png; }); const c = mkCanvas(img.width, img.height); c.getContext('2d').drawImage(img, 0, 0); return { ...r.props, canvas: c, ver: ++VER }; }));
+  const layers = await Promise.all(obj.layers.map(async r => { const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = r.png; }); const c = mkCanvas(img.width, img.height); c.getContext('2d').drawImage(img, 0, 0); const L = { ...r.props, canvas: c, ver: ++VER }; if (r.mask) { const mi = await new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = r.mask; }); if (mi) { L._mask = mkCanvas(mi.width, mi.height); L._mask.getContext('2d').drawImage(mi, 0, 0); } } return L; }));
   S.pid = 'd_' + uid(); S.doc = { ...obj.doc }; S.layers = layers; S.active = obj.active || layers[0].id; S.sel = null; fitView(); requestRender(); resetHistory('فتح مشروع');
 }
 async function handleOpenFile(f) {
@@ -1708,14 +1872,14 @@ async function flushSave() { if (saveTimer) { clearTimeout(saveTimer); saveTimer
 async function saveDesign() {
   if (!DB.db || !S.pid) return;
   if (!persistAsked && navigator.storage && navigator.storage.persist) { persistAsked = true; navigator.storage.persist().catch(() => { }); }
-  const layers = []; for (const L of S.layers) { if (L._blobVer !== L.ver || !L._blob) { L._blob = await canvasToBlob(L.canvas); L._blobVer = L.ver; } layers.push({ props: layerProps(L), blob: L._blob }); }
+  const layers = []; for (const L of S.layers) { if (L._blobVer !== L.ver || !L._blob) { L._blob = await canvasToBlob(L.canvas); L._blobVer = L.ver; } if (L._mask && (L._mbVer !== L.ver || !L._mb)) { L._mb = await canvasToBlob(L._mask); L._mbVer = L.ver; } layers.push({ props: layerProps(L), blob: L._blob, mask: L._mask ? L._mb : null }); }
   const t = mkCanvas(320, 200), tx = t.getContext('2d'); const s = Math.min(320 / S.doc.w, 200 / S.doc.h); compositeTo(docCtx, S.layers, S.doc.w, S.doc.h); tx.drawImage(docCanvas, (320 - S.doc.w * s) / 2, (200 - S.doc.h * s) / 2, S.doc.w * s, S.doc.h * s);
   const prev = await DB.get('projects', S.pid).catch(() => null);
   await DB.put('projects', { id: S.pid, kind: 'design', name: S.doc.name, created: prev?.created || Date.now(), updated: Date.now(), thumb: t.toDataURL('image/png'), data: { doc: S.doc, active: S.active, layers, fg: S.fg, bg: S.bg } });
   LS.set('naqsh.lastDesign', S.pid); setSaveState(false);
 }
 async function loadDesign(rec) {
-  const layers = []; for (const r of rec.data.layers) { const c = mkCanvas(r.props.canvasW || 1, 1); let canvas; try { const img = await blobToImage(r.blob); canvas = mkCanvas(img.width, img.height); canvas.getContext('2d').drawImage(img, 0, 0); } catch { canvas = mkCanvas(rec.data.doc.w, rec.data.doc.h); } const L = { ...r.props, canvas, ver: ++VER }; L._blob = r.blob; L._blobVer = L.ver; layers.push(L); }
+  const layers = []; for (const r of rec.data.layers) { const c = mkCanvas(r.props.canvasW || 1, 1); let canvas; try { const img = await blobToImage(r.blob); canvas = mkCanvas(img.width, img.height); canvas.getContext('2d').drawImage(img, 0, 0); } catch { canvas = mkCanvas(rec.data.doc.w, rec.data.doc.h); } const L = { ...r.props, canvas, ver: ++VER }; L._blob = r.blob; L._blobVer = L.ver; if (r.mask) { try { const mi = await blobToImage(r.mask); L._mask = mkCanvas(mi.width, mi.height); L._mask.getContext('2d').drawImage(mi, 0, 0); } catch { } } layers.push(L); }
   if (TF.active) TOOLS.cancelTransform();
   S.pid = rec.id; S.doc = { ...rec.data.doc }; S.layers = layers; S.active = rec.data.active || layers[0]?.id; S.sel = null; S.crop = null;
   if (!S.layers.length) S.layers.push(newLayerObj('الخلفية', mkCanvas(S.doc.w, S.doc.h)));
@@ -1797,9 +1961,10 @@ document.addEventListener('keydown', e => {
   if (k === 'Backspace' && e.altKey) { e.preventDefault(); fillSelection(); return; }
   if (k === '[' || k === ']') { const o = S.opts[S.tool]; if (o && o.size) { o.size = clamp(Math.round(o.size * (k === ']' ? 1.15 : .87)) + (k === ']' ? 1 : -1), 1, 600); UI.buildOptbar(); requestRender(false); } return; }
   if (k.startsWith('Arrow') && S.tool === 'move') { const L = activeLayer(); if (!L) return; e.preventDefault(); const s = e.shiftKey ? 10 : 1; const dx = k === 'ArrowLeft' ? -s : k === 'ArrowRight' ? s : 0, dy = k === 'ArrowUp' ? -s : k === 'ArrowDown' ? s : 0; L.x += dx; L.y += dy; if (L.type === 'text') { L.text.ax += dx; L.text.ay += dy; } requestRender(); clearTimeout(D.nt); D.nt = setTimeout(() => commit('تحريك'), 400); return; }
-  const tk = { v: 'move', m: 'select', l: 'lasso', w: 'wand', c: 'crop', i: 'eyedropper', b: 'brush', n: 'pencil', e: 'eraser', s: 'clone', r: 'retouch', g: 'fill', u: 'shape', t: 'text', h: 'hand', z: 'zoom' }[k.toLowerCase()];
-  if (tk) { setTool(tk); return; }
+  const tk = { v: 'move', m: 'select', l: 'lasso', w: 'wand', c: 'crop', i: 'eyedropper', b: 'brush', n: 'pencil', e: 'eraser', s: 'clone', r: 'retouch', g: 'fill', u: 'shape', t: 'text', h: 'hand', z: 'zoom', j: 'heal', p: 'pen', y: 'histbrush', o: 'retouch:dodge', q: 'quickmask', f: 'screenmode' }[k.toLowerCase()];
+  if (tk) { if (typeof pickTool === 'function') pickTool(tk); else setTool(tk); return; }
   if (k.toLowerCase() === 'x') swapColors(); if (k.toLowerCase() === 'd') { if (S.tool === 'gradient') return; defaultColors(); }
+  if (k === 'Enter' && S.tool === 'pen' && typeof PEN !== 'undefined') { PEN.finish(); return; }
 });
 document.addEventListener('keyup', e => { if (e.key === ' ') { D.space = false; view.style.cursor = ''; } });
 
@@ -1814,7 +1979,7 @@ document.addEventListener('paste', async e => { const tag = e.target.tagName; if
 /* ============================== workspace ============================== */
 function switchWs(w) {
   $$('.ws-tabs button').forEach(b => b.classList.toggle('on', b.dataset.ws === w));
-  $('#ws-design').hidden = w !== 'design'; $('#ws-video').hidden = w !== 'video'; $('#btnPanels').style.visibility = w === 'design' ? '' : 'hidden';
+  if (typeof HOME !== 'undefined' && HOME.hide) HOME.hide(); $('#ws-design').hidden = w !== 'design'; $('#ws-video').hidden = w !== 'video'; $('#btnPanels').style.visibility = w === 'design' ? '' : 'hidden';
   $('#menus').style.visibility = w === 'design' ? '' : 'hidden';
   LS.set('naqsh.ws', w);
   if (w === 'design') { resizeView(); requestRender(); if (window.VID) VID.pause(); } else if (window.VID) VID.show();
@@ -2152,6 +2317,782 @@ PANELS.edit = function (b) {
   const orig = PANELS.refresh.bind(PANELS);
   PANELS.refresh = function () { if (this.tab === 'edit') { const b = $('#pbody'); if (!b) return; $('#cpWrap').hidden = true; b.hidden = false; this.edit(b); this.layers($('#lbody')); $('#stDoc').textContent = `${S.doc.w} × ${S.doc.h}`; if (typeof updMbar === 'function') updMbar(); return; } orig(); if (typeof updMbar === 'function') updMbar(); };
 })();
+/* ============================== Photoshop workspace: theme, tools, layers, masks, adjustment layers, rulers, new document ============================== */
+/* ---------- theme ---------- */
+(() => {
+  PREF.THEMES.ps = { n: 'فوتوشوب (افتراضي)', ground: '#262626', bg: '#2b2b2b', panel: '#323232', p2: '#3a3a3a', p3: '#484848', line: '#1c1c1c', line2: '#4c4c4c', fg: '#e3e3e3', muted: '#b3b3b3', dim: '#868686', pop: '#383838', scheme: 'dark' };
+  PREF.THEMES.light.n = 'أبيض';
+  PREF.ACCENTS.ps = ['أزرق فوتوشوب', '#1473e6', '#378ef0', '#ffffff'];
+  const o = PREF.o; if (!o.v || o.v < 3) { o.theme = 'ps'; o.accent = 'ps'; o.v = 3; LS.set('naqsh.prefs', JSON.stringify(o)); }
+})();
+S.rulers = LS.get('naqsh.rulers') !== 'off';
+Object.assign(S.opts, {
+  heal: { size: 40, hardness: .5 }, redeye: { size: 60, darken: .75 }, histbrush: { size: 50, hardness: .5, opacity: 1 },
+  smudge: { size: 45, strength: .6 }, liquify: { size: 120, strength: .5 }, pen: {}, quick: { size: 30, tolerance: 26 }
+});
+S.opts.move.showTf = S.opts.move.showTf ?? false;
+
+/* ---------- icons ---------- */
+Object.assign(ICONS, {
+  heal: I('<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M10.5 10.5l3 3M13.5 10.5l-3 3"/>'),
+  redeye: I('<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/>'),
+  histbrush: I('<path d="M10 14.5 18 4a1.8 1.8 0 0 1 2.5 2.5L10.5 15"/><path d="M10 14.5c-2-.4-4 .8-4.3 3-.2 1.5-1 2.2-2.2 2.5 3.5 1.3 7.2.4 7.5-3.4"/><path d="M2.5 4.5v3h3M2.6 7.4A5 5 0 0 1 10 4"/>'),
+  smudge: I('<path d="M8 21v-5l-2.5-3.5V8a1.5 1.5 0 0 1 3 0v3.5M8.5 11V4.5a1.5 1.5 0 0 1 3 0V11M11.5 11V5.5a1.5 1.5 0 0 1 3 0V12M14.5 12V8.5a1.5 1.5 0 0 1 3 0v6L16 21"/>'),
+  liquify: I('<path d="M3 8c3-3 6 3 9 0s6 3 9 0M3 14c3-3 6 3 9 0s6 3 9 0"/><path d="M12 18v4M10 20l2 2 2-2"/>'),
+  blurT: I('<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11Z"/>'),
+  sharpT: I('<path d="M12 3 5.5 20h13L12 3Z"/>'),
+  dodge: I('<circle cx="9" cy="9" r="5.5"/><path d="m13 13 7.5 7.5"/>'),
+  burn: I('<path d="M7 21c-1-4.5.5-7 3-9l-1-5.5a1.5 1.5 0 0 1 3 0l.5 3.5.5-4a1.5 1.5 0 0 1 3 0l-.5 5c2 1.5 2.5 5 1.5 10"/>'),
+  sponge: I('<rect x="4" y="7" width="16" height="11" rx="3"/><circle cx="9" cy="11" r="1"/><circle cx="14" cy="13" r="1"/><circle cx="10.5" cy="15" r=".8"/><circle cx="15.5" cy="10" r=".8"/>'),
+  pen: I('<path d="M12 2.5 6 9.5l2.5 9h7l2.5-9-6-7Z"/><path d="M12 2.5V11"/><circle cx="12" cy="12" r="1.4"/><path d="M8.5 21.5h7"/>'),
+  quick: I('<circle cx="10" cy="10" r="6.5" stroke-dasharray="3 2.5"/><path d="M15 15l5.5 5.5"/><path d="M10 7.5v5M7.5 10h5"/>'),
+  ellipse: I('<ellipse cx="12" cy="12" rx="9" ry="7" stroke-dasharray="3 2.5"/>'),
+  mask: I('<rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="12" cy="12" r="4" fill="currentColor"/>'),
+  adjc: I('<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16Z" fill="currentColor"/>'),
+  link: I('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+  newl: I('<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M12 8v8M8 12h8"/>'),
+  home: I('<path d="M3 11 12 3l9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>'),
+  lockA: I('<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 12h16M12 4v16" opacity=".6"/><rect x="4" y="4" width="8" height="8" fill="currentColor" opacity=".55"/><rect x="12" y="12" width="8" height="8" fill="currentColor" opacity=".55"/>'),
+  lockP: I('<path d="M9.5 14.5 18 4a1.8 1.8 0 0 1 2.5 2.5L10 15"/><path d="M9.5 14.5c-2-.4-4 .8-4.3 3-.2 1.5-1 2.2-2.2 2.5 3.5 1.3 7.2.4 7.5-3.4"/>'),
+  lockM: I('<path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>'),
+  lockAll: I('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+  info: I('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'),
+  nav: I('<rect x="3" y="5" width="18" height="14" rx="1"/><rect x="8" y="8" width="7" height="6" stroke="#e33"/>'),
+  histo: I('<path d="M3 20h18"/><path d="M4 20c2-6 3-11 5-11s3 8 5 8 2-5 3-5 2 6 3 8" fill="currentColor" opacity=".35"/>'),
+  adjust: I('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+  swatch: I('<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/><circle cx="12" cy="7.5" r="1.5" fill="currentColor"/><circle cx="16" cy="10" r="1.5" fill="currentColor"/><path d="M12 21a3 3 0 0 1 0-6h2"/>'),
+  props: I('<path d="M4 7h16M4 12h16M4 17h10"/>'),
+  looks: I('<circle cx="9" cy="9" r="6"/><circle cx="15" cy="15" r="6"/>'),
+  frames: I('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10"/>'),
+  hist: I('<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
+  layers: I('<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>'),
+  chan: I('<circle cx="9" cy="9" r="5"/><circle cx="15" cy="9" r="5"/><circle cx="12" cy="14.5" r="5"/>'),
+  paths: I('<path d="M4 18C8 4 16 20 20 6"/><rect x="2.5" y="16.5" width="3" height="3"/><rect x="18.5" y="4.5" width="3" height="3"/>'),
+  aL: I('<path d="M4 3v18"/><rect x="7" y="6" width="12" height="4"/><rect x="7" y="14" width="7" height="4"/>'), aCH: I('<path d="M12 3v18"/><rect x="5" y="6" width="14" height="4"/><rect x="8" y="14" width="8" height="4"/>'), aR: I('<path d="M20 3v18"/><rect x="5" y="6" width="12" height="4"/><rect x="10" y="14" width="7" height="4"/>'),
+  aT: I('<path d="M3 4h18"/><rect x="6" y="7" width="4" height="12"/><rect x="14" y="7" width="4" height="7"/>'), aCV: I('<path d="M3 12h18"/><rect x="6" y="5" width="4" height="14"/><rect x="14" y="8" width="4" height="8"/>'), aB: I('<path d="M3 20h18"/><rect x="6" y="5" width="4" height="12"/><rect x="14" y="10" width="4" height="7"/>'),
+  qmask: I('<rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"/>'),
+  screen: I('<rect x="3" y="5" width="18" height="13" rx="1"/><path d="M8 21h8M12 18v3"/>')
+});
+Object.assign(TOOL_NAMES, { heal: 'فرشاة المعالجة الموضعية', redeye: 'أداة العين الحمراء', histbrush: 'فرشاة السجل', smudge: 'أداة الإصبع', liquify: 'تسييل (دفع للأمام)', pen: 'أداة القلم (المسارات)', quick: 'التحديد السريع' });
+Object.assign(TOOL_HELP, {
+  heal: ['تزيل العيوب والبقع والخدوش: ارسم فوق العيب فيُملأ تلقائياً من الجلد أو الخلفية المحيطة.', ['اختر طبقة الصورة.', 'اضبط الحجم ليغطي العيب قليلاً.', 'امسح فوق العيب وارفع إصبعك — يُعالج فوراً.']],
+  redeye: ['تزيل احمرار العين الناتج عن الفلاش بنقرة واحدة.', ['كبّر على العين.', 'انقر على بؤبؤ العين الحمراء.', 'اضبط الحجم والتعتيم من الشريط العلوي إن لزم.']],
+  histbrush: ['ترسم من الحالة الأصلية للطبقة، فتعيد أجزاء محددة كما كانت قبل التعديل.', ['طبّق فلتراً أو تعديلاً على الصورة.', 'اختر فرشاة السجل.', 'ارسم فوق المكان الذي تريد إرجاعه للأصل.']],
+  smudge: ['تسحب الألوان كأنك تمرر إصبعك على طلاء مبلول.', ['اختر القوة من الشريط العلوي.', 'اسحب فوق الصورة لتلطيخ الألوان.']],
+  liquify: ['تدفع البكسلات في اتجاه السحب لتعديل الأشكال (تنحيف، تكبير، تحريك) مثل فلتر التسييل.', ['اختر حجماً كبيراً للفرشاة.', 'اسحب ببطء في الاتجاه المطلوب.', 'للتراجع Ctrl+Z.']],
+  pen: ['ترسم مسارات دقيقة بنقاط ومنحنيات، ثم تحوّلها إلى تحديد أو شكل أو حدّ.', ['انقر لإضافة نقطة، واسحب أثناء النقر لعمل منحنى.', 'انقر على النقطة الأولى لإغلاق المسار أو اضغط Enter.', 'من الشريط العلوي اختر: تحديد، تعبئة، حدّ أو شكل.']],
+  quick: ['ترسم فوق الجسم فيتمدد التحديد تلقائياً حتى حوافه.', ['اسحب فوق الجسم المراد تحديده.', 'اسحب مرة أخرى للإضافة، ومع Alt للطرح.', 'استخدم تحديد ← تنعيم الحواف لنتيجة أنعم.']]
+});
+
+/* ---------- grouped toolbar with flyouts (like Photoshop) ---------- */
+const TMETA = {
+  move: ['أداة التحريك', 'V', 'move'], 'select:rect': ['أداة التحديد المستطيل', 'M', 'select'], 'select:ellipse': ['أداة التحديد البيضاوي', 'M', 'ellipse'], lasso: ['أداة اللاسو', 'L', 'lasso'],
+  quick: ['أداة التحديد السريع', 'W', 'quick'], wand: ['أداة العصا السحرية', 'W', 'wand'], crop: ['أداة الاقتصاص', 'C', 'crop'], eyedropper: ['أداة القطارة', 'I', 'eyedropper'],
+  heal: ['فرشاة المعالجة الموضعية', 'J', 'heal'], redeye: ['أداة العين الحمراء', 'J', 'redeye'], brush: ['أداة الفرشاة', 'B', 'brush'], pencil: ['أداة القلم الرصاص', 'N', 'pencil'],
+  clone: ['أداة ختم النسخ', 'S', 'clone'], histbrush: ['أداة فرشاة السجل', 'Y', 'histbrush'], eraser: ['أداة الممحاة', 'E', 'eraser'], gradient: ['أداة التدرج', 'G', 'gradient'], fill: ['أداة دلو الطلاء', 'G', 'fill'],
+  'retouch:blur': ['أداة التمويه', '', 'blurT'], 'retouch:sharpen': ['أداة زيادة الحدة', '', 'sharpT'], smudge: ['أداة الإصبع', '', 'smudge'], liquify: ['تسييل (دفع للأمام)', '', 'liquify'],
+  'retouch:dodge': ['أداة التفتيح', 'O', 'dodge'], 'retouch:burn': ['أداة التغميق', 'O', 'burn'], 'retouch:sponge': ['أداة الإسفنجة (تقليل التشبع)', 'O', 'sponge'], 'retouch:saturate': ['زيادة التشبع', '', 'sponge'],
+  pen: ['أداة القلم', 'P', 'pen'], text: ['أداة النص الأفقي', 'T', 'text'], shape: ['أدوات الأشكال', 'U', 'shape'], hand: ['أداة اليد', 'H', 'hand'], zoom: ['أداة التكبير', 'Z', 'zoom']
+};
+const TG = [['move'], ['select:rect', 'select:ellipse'], ['lasso'], ['quick', 'wand'], ['crop'], ['eyedropper'], '-', ['heal', 'redeye'], ['brush', 'pencil'], ['clone'], ['histbrush'], ['eraser'], ['gradient', 'fill'], ['retouch:blur', 'retouch:sharpen', 'smudge', 'liquify'], ['retouch:dodge', 'retouch:burn', 'retouch:sponge'], '-', ['pen'], ['text'], ['shape'], '-', ['hand'], ['zoom']];
+const TGCUR = TG.map(g => Array.isArray(g) ? g[0] : null);
+function curToolId() { if (S.tool === 'select') return 'select:' + (S.opts.select.shape === 'ellipse' ? 'ellipse' : 'rect'); if (S.tool === 'retouch') return 'retouch:' + S.opts.retouch.mode; return S.tool; }
+function pickTool(id) {
+  if (id === 'quickmask') return QMASK.toggle(); if (id === 'screenmode') return screenMode();
+  const [t, m] = id.split(':');
+  if (t === 'select' && m) S.opts.select.shape = m === 'ellipse' ? 'ellipse' : 'rect';
+  if (t === 'retouch' && m) S.opts.retouch.mode = m;
+  if (t === 'pen' && S.tool !== 'pen') PEN.reset(true);
+  setTool(t);
+}
+function closeFlyout() { $$('.tflyout').forEach(f => f.remove()); }
+function openFlyout(gi, btnEl) {
+  closeFlyout(); const g = TG[gi]; const f = document.createElement('div'); f.className = 'tflyout';
+  g.forEach(id => { const [n, k, ic] = TMETA[id]; const b = document.createElement('button'); b.innerHTML = `<span>${curToolId() === id ? '■' : ''}</span>${ICONS[ic]}<span>${n}</span><kbd>${k}</kbd>`; b.onclick = () => { closeFlyout(); TGCUR[gi] = id; pickTool(id); }; f.appendChild(b); });
+  document.body.appendChild(f); const r = btnEl.getBoundingClientRect(); const dirRtl = $('.work').dataset.dir === 'rtl';
+  f.style.top = Math.min(r.top, window.innerHeight - f.offsetHeight - 8) + 'px'; if (dirRtl) f.style.left = Math.max(8, r.left - f.offsetWidth - 4) + 'px'; else f.style.left = r.right + 4 + 'px';
+  setTimeout(() => document.addEventListener('pointerdown', function h(e) { if (!e.target.closest('.tflyout')) { closeFlyout(); document.removeEventListener('pointerdown', h); } }), 0);
+}
+UI.buildToolbar = (orig => function () {
+  orig.call(UI); const tb = $('#toolbar'); $$('.tool,.tsep', tb).forEach(x => x.remove());
+  const anchor = tb.querySelector('.swatches');
+  TG.forEach((g, gi) => {
+    if (g === '-') { const s = document.createElement('div'); s.className = 'tsep'; tb.insertBefore(s, anchor); return; }
+    const b = document.createElement('button'); b.className = 'tool' + (g.length > 1 ? ' grp' : ''); b.dataset.g = gi;
+    const paint = () => { const id = TGCUR[gi], [n, k, ic] = TMETA[id]; b.innerHTML = ICONS[ic]; b.title = `${n} (${k})${g.length > 1 ? ' — اضغط مطولاً أو بالزر الأيمن لبقية الأدوات' : ''}`; b.setAttribute('aria-label', n); b.dataset.tool = id.split(':')[0]; }; b._paint = paint; paint();
+    let lp = 0, opened = false;
+    b.onpointerdown = () => { opened = false; if (g.length > 1) lp = setTimeout(() => { opened = true; openFlyout(gi, b); }, 420); };
+    b.onpointerup = b.onpointerleave = () => clearTimeout(lp);
+    b.onclick = () => { if (opened) return; pickTool(TGCUR[gi]); };
+    b.oncontextmenu = e => { e.preventDefault(); if (g.length > 1) openFlyout(gi, b); };
+    tb.insertBefore(b, anchor);
+  });
+  /* quick mask + screen mode like the bottom of Photoshop's toolbar */
+  const ex = document.createElement('div'); ex.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0;margin-top:6px';
+  [['qmask', 'التحرير في وضع القناع السريع (Q)', () => QMASK.toggle()], ['screen', 'تغيير وضع الشاشة (F)', () => screenMode()]].forEach(([ic, tip, fn]) => { const b = document.createElement('button'); b.className = 'tool'; b.id = 'tb_' + ic; b.innerHTML = ICONS[ic]; b.title = tip; b.setAttribute('aria-label', tip); b.onclick = fn; ex.appendChild(b); });
+  tb.appendChild(ex);
+  syncToolbar();
+})(UI.buildToolbar);
+function syncToolbar() {
+  const cur = curToolId();
+  $$('#toolbar .tool[data-g]').forEach(b => { const gi = +b.dataset.g, g = TG[gi]; const on = g.includes(cur); if (on && TGCUR[gi] !== cur) { TGCUR[gi] = cur; b._paint(); } b.classList.toggle('on', on); });
+  const q = $('#tb_qmask'); if (q) q.classList.toggle('on', !!QMASK.L);
+}
+setTool = (orig => function (t) { orig(t); syncToolbar(); })(setTool);
+
+/* ---------- options bar (Photoshop style) ---------- */
+UI.buildOptbar = (orig => function () {
+  orig.call(UI); const bar = $('#optbar'), t = S.tool, o = S.opts[t];
+  const add = (...els) => els.forEach(e => bar.appendChild(e));
+  if (!TF.active) {
+    if (t === 'move') {
+      bar.innerHTML = '';
+      const al = document.createElement('div'); al.className = 'ob-al';
+      [['aL', 'محاذاة الحواف اليسرى', 'l'], ['aCH', 'محاذاة المراكز أفقياً', 'ch'], ['aR', 'محاذاة الحواف اليمنى', 'r'], ['aT', 'محاذاة الحواف العلوية', 't'], ['aCV', 'محاذاة المراكز عمودياً', 'cv'], ['aB', 'محاذاة الحواف السفلية', 'b']].forEach(([ic, tip, k]) => { const b = document.createElement('button'); b.innerHTML = ICONS[ic]; b.title = tip; b.setAttribute('aria-label', tip); b.onclick = () => alignLayer(k); al.appendChild(b); });
+      const sep = () => { const s = document.createElement('span'); s.className = 'ob-sep'; return s; };
+      add(ctlCheck('تحديد تلقائي: طبقة', o, 'auto'), ctlCheck('إظهار عناصر التحويل', o, 'showTf', () => requestRender(false)), sep(), al, sep(), btn('تحويل حر (Ctrl+T)', () => TOOLS.startTransform()));
+    }
+    if (t === 'heal') add(ctlRange('الحجم', o, 'size', 2, 400, 1, px), ctlRange('الصلابة', o, 'hardness', 0, 1, .01, pct), (() => { const s = document.createElement('span'); s.className = 'ctl'; s.textContent = 'امسح فوق العيب — يُملأ من المحيط تلقائياً'; return s; })());
+    if (t === 'redeye') add(ctlRange('حجم البؤبؤ', o, 'size', 6, 400, 1, px), ctlRange('مقدار التعتيم', o, 'darken', .1, 1, .01, pct));
+    if (t === 'histbrush') add(ctlRange('الحجم', o, 'size', 2, 500, 1, px), ctlRange('الصلابة', o, 'hardness', 0, 1, .01, pct), ctlRange('العتامة', o, 'opacity', .05, 1, .01, pct));
+    if (t === 'smudge') add(ctlRange('الحجم', o, 'size', 2, 300, 1, px), ctlRange('القوة', o, 'strength', .05, 1, .01, pct));
+    if (t === 'liquify') add(ctlRange('حجم الفرشاة', o, 'size', 10, 600, 1, px), ctlRange('الضغط', o, 'strength', .05, 1, .01, pct));
+    if (t === 'quick') add(selModeSeg(S.opts.select), ctlRange('الحجم', o, 'size', 4, 200, 1, px), ctlRange('الحساسية', o, 'tolerance', 4, 80), btn('تحديد الموضوع', () => selectSubject()), btn('تنعيم الحواف…', () => DLG.feather()), btn('إلغاء التحديد', deselect));
+    if (t === 'pen') add(btn('إغلاق المسار', () => PEN.finish(true)), btn('تحديد', () => PEN.act('sel'), 'btn sm primary'), btn('تعبئة', () => PEN.act('fill')), btn('حدّ بالفرشاة', () => PEN.act('stroke')), btn('شكل جديد', () => PEN.act('shape')), btn('حفظ المسار', () => PEN.act('save')), btn('مسح', () => PEN.reset(true)), (() => { const s = document.createElement('span'); s.className = 'ctl'; s.textContent = 'انقر لنقطة، واسحب لمنحنى'; return s; })());
+  }
+  const pre = document.createDocumentFragment();
+  const h = document.createElement('button'); h.className = 'ob-ic'; h.innerHTML = ICONS.home; h.title = 'الشاشة الرئيسية'; h.setAttribute('aria-label', 'الشاشة الرئيسية'); h.onclick = () => HOME.show(); pre.appendChild(h);
+  const tc = document.createElement('span'); tc.className = 'ob-tool'; const id = TF.active ? 'move' : curToolId(); tc.innerHTML = (ICONS[(TMETA[id] || [])[2]] || ICONS[t] || '') + '<span style="font-size:11.5px">' + esc(TF.active ? 'تحويل حر' : (TMETA[id] || [TOOL_NAMES[t]])[0]) + '</span>'; pre.appendChild(tc);
+  const s = document.createElement('span'); s.className = 'ob-sep'; pre.appendChild(s);
+  bar.prepend(pre);
+})(UI.buildOptbar);
+
+/* ---------- right icon dock + extra panels ---------- */
+const DOCK = [['edit', 'adjust', 'تعديل الصورة'], ['color', 'swatch', 'الألوان'], ['props', 'props', 'الخصائص'], ['adjust', 'adjc', 'التعديلات (طبقات تعديل)'], ['looks', 'looks', 'الفلاتر'], ['frames', 'frames', 'الإطارات'], ['history', 'hist', 'السجل'], '-', ['info', 'info', 'المعلومات'], ['nav', 'nav', 'المتصفح'], ['hist', 'histo', 'المدرج التكراري'], '-', ['@layers', 'layers', 'الطبقات'], ['@channels', 'chan', 'القنوات'], ['@paths', 'paths', 'المسارات']];
+(() => {
+  const pt = $('#ptabs'), close = $('#closePanels');
+  [['adjust', 'التعديلات'], ['info', 'المعلومات'], ['nav', 'المتصفح'], ['hist', 'المدرج']].forEach(([k, n]) => { const b = document.createElement('button'); b.dataset.tab = k; b.textContent = n; b.onclick = () => openPanel(k); pt.insertBefore(b, close); });
+  const d = $('#dock');
+  DOCK.forEach(it => { if (it === '-') { d.appendChild(document.createElement('hr')); return; } const [k, ic, n] = it; const b = document.createElement('button'); b.dataset.k = k; b.innerHTML = ICONS[ic]; b.title = n; b.setAttribute('aria-label', n); b.onclick = () => { if (k[0] === '@') { PANELS.lp = k.slice(1); PANELS.refresh(); $('#lbody').scrollTop = 0; } else openPanel(k); }; d.appendChild(b); });
+  $$('#lpTabs button').forEach(b => b.onclick = () => { PANELS.lp = b.dataset.lp; PANELS.refresh(); });
+})();
+function updDock() { $$('#dock button').forEach(b => { const k = b.dataset.k; b.classList.toggle('on', k[0] === '@' ? (PANELS.lp || 'layers') === k.slice(1) : PANELS.tab === k); }); $$('#lpTabs button').forEach(b => b.classList.toggle('on', b.dataset.lp === (PANELS.lp || 'layers'))); }
+const fmtMB = n => n >= 1048576 ? (n / 1048576).toFixed(n > 1e8 ? 0 : 1) + 'M' : Math.round(n / 1024) + 'K';
+PANELS.refresh = (orig => function () {
+  const t = this.tab;
+  if (['adjust', 'info', 'nav', 'hist'].includes(t)) { const b = $('#pbody'); if (!b) return; $('#cpWrap').hidden = true; b.hidden = false; this['x_' + t](b); this.layers($('#lbody')); }
+  else orig.call(this);
+  const flat = S.doc.w * S.doc.h * 4, tot = S.layers.reduce((a, L) => a + (L.type === 'adj' ? 0 : L.canvas.width * L.canvas.height * 4) + (L._mask ? S.doc.w * S.doc.h : 0), 0);
+  $('#stDoc').textContent = `${S.doc.w} × ${S.doc.h} بكسل · المستند: ${fmtMB(flat)}/${fmtMB(tot)}`;
+  updDock(); if (typeof updMbar === 'function') updMbar();
+})(PANELS.refresh);
+PANELS.show = (orig => function (t) { orig.call(this, t); updDock(); })(PANELS.show);
+
+/* adjustments panel */
+const ADJ_ICON = { brightness: 'dodge', levels: 'histo', curves: 'liquify', exposure: 'adjc', vibrance: 'looks', hsl: 'swatch', balance: 'adjust', gray: 'adjc', invert: 'qmask', posterize: 'histo', threshold: 'adjc', temp: 'burn' };
+PANELS.x_adjust = function (b) {
+  const keys = ADJ_KEYS.filter(k => ADJ[k].g === 'adj');
+  b.innerHTML = `<div class="pane"><div class="subhead">إضافة طبقة تعديل</div><div class="note">طبقة التعديل تغيّر كل ما تحتها دون أن تتلف الصورة الأصلية — يمكنك تعديلها أو حذفها أو إخفاؤها في أي وقت، والرسم على قناعها بالأسود يخفي أثرها.</div><div class="adjgrid" id="adjG"></div><div class="chips" id="adjL"></div></div>`;
+  keys.forEach(k => { const t = document.createElement('button'); t.className = 'chip'; t.textContent = ADJ[k].n; t.onclick = () => addAdjLayer(k); $('#adjL').appendChild(t); });
+  ['brightness', 'levels', 'curves', 'exposure', 'vibrance', 'hsl', 'balance', 'gray', 'invert', 'posterize'].filter(k => ADJ[k]).forEach(k => { const t = document.createElement('button'); t.innerHTML = ICONS[ADJ_ICON[k] || 'adjc']; t.title = ADJ[k].n; t.setAttribute('aria-label', ADJ[k].n); t.onclick = () => addAdjLayer(k); $('#adjG').appendChild(t); });
+};
+/* info panel */
+const INFO = { x: 0, y: 0 };
+PANELS.x_info = function (b) { b.innerHTML = `<div class="pane"><div class="info-grid" id="infoG"></div><div class="note">حرّك المؤشر فوق التصميم لقراءة الموضع ولون البكسل.</div></div>`; updInfo(); };
+function updInfo() {
+  const g = $('#infoG'); if (!g || PANELS.tab !== 'info') return; let c = [0, 0, 0, 0]; const x = Math.floor(INFO.x), y = Math.floor(INFO.y);
+  if (x >= 0 && y >= 0 && x < S.doc.w && y < S.doc.h) { try { c = docCtx.getImageData(x, y, 1, 1).data; } catch { } }
+  const [h, s, l] = rgb2hsl(c[0], c[1], c[2]); const L = activeLayer(); const sb = S.sel && S.sel.bounds;
+  g.innerHTML = `<span><b>R:</b>${c[0]}</span><span><b>X:</b>${x}</span><span><b>G:</b>${c[1]}</span><span><b>Y:</b>${y}</span><span><b>B:</b>${c[2]}</span><span><b>A:</b>${Math.round(c[3] / 2.55)}%</span><span><b>H:</b>${Math.round(h * 360)}°</span><span><b>S:</b>${Math.round(s * 100)}%</span><span><b>L:</b>${Math.round(l * 100)}%</span><span><b>#</b>${rgbToHex({ r: c[0], g: c[1], b: c[2] }).slice(1)}</span><span><b>W:</b>${sb ? sb.w : '—'}</span><span><b>H:</b>${sb ? sb.h : '—'}</span><span style="grid-column:1/-1"><b>${esc(L ? L.name : '')}</b>${L && L.type !== 'adj' ? L.canvas.width + '×' + L.canvas.height + ' @ ' + L.x + ',' + L.y : ''}</span><span style="grid-column:1/-1"><b>المستند:</b>${S.doc.w}×${S.doc.h} · ${S.doc.res || 72} ppi</span>`;
+}
+view.addEventListener('pointermove', e => { const p = toDoc(e); INFO.x = p.x; INFO.y = p.y; if (PANELS.tab === 'info') { clearTimeout(INFO.t); INFO.t = setTimeout(updInfo, 40); } });
+/* navigator */
+PANELS.x_nav = function (b) {
+  b.innerHTML = `<div class="pane"><div class="navbox" id="navB"><canvas id="navC"></canvas><i id="navR"></i></div><label class="prop">التكبير<input type="range" id="navZ" min="-4.5" max="3.4" step=".01" value="${Math.log(S.zoom)}"><output id="navZO">${Math.round(S.zoom * 100)}%</output></label><div class="icon-row"><button class="btn sm" id="navFit">ملاءمة</button><button class="btn sm" id="nav100">100%</button></div></div>`;
+  const nb = $('#navB'); const go = e => { const c = $('#navC'), r = c.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width * S.doc.w, dy = (e.clientY - r.top) / r.height * S.doc.h; const vr = VP.getBoundingClientRect(); S.panX = vr.width / 2 - dx * S.zoom; S.panY = vr.height / 2 - dy * S.zoom; requestRender(false); };
+  nb.onpointerdown = e => { nb.setPointerCapture(e.pointerId); go(e); nb.onpointermove = go; }; nb.onpointerup = () => nb.onpointermove = null;
+  $('#navZ').oninput = e => { zoomAt(Math.exp(+e.target.value) / S.zoom); }; $('#navFit').onclick = fitView; $('#nav100').onclick = () => { S.zoom = 1; fitCenter(); };
+  updNav(true);
+};
+function updNav(force) {
+  const c = $('#navC'); if (!c || PANELS.tab !== 'nav') return; const W = Math.min(260, $('#pbody').clientWidth - 30), s = Math.min(W / S.doc.w, 180 / S.doc.h);
+  if (force || c.width !== Math.round(S.doc.w * s) || updNav.dirty) { c.width = Math.round(S.doc.w * s); c.height = Math.round(S.doc.h * s); const x = c.getContext('2d'); x.drawImage(docCanvas, 0, 0, c.width, c.height); updNav.dirty = false; }
+  const vr = VP.getBoundingClientRect(), r = $('#navR'); const x0 = -S.panX / S.zoom, y0 = -S.panY / S.zoom, w = vr.width / S.zoom, h = vr.height / S.zoom;
+  const cx0 = clamp(x0, 0, S.doc.w), cy0 = clamp(y0, 0, S.doc.h), cx1 = clamp(x0 + w, 0, S.doc.w), cy1 = clamp(y0 + h, 0, S.doc.h);
+  Object.assign(r.style, { left: cx0 * s + 'px', top: cy0 * s + 'px', width: Math.max(4, (cx1 - cx0) * s) + 'px', height: Math.max(4, (cy1 - cy0) * s) + 'px' });
+  const z = $('#navZO'); if (z) z.textContent = Math.round(S.zoom * 100) + '%';
+}
+/* histogram */
+PANELS.x_hist = function (b) { b.innerHTML = `<div class="pane"><div class="seg" id="hsC"><button data-c="rgb" class="on">RGB</button><button data-c="l">الإضاءة</button><button data-c="r">أحمر</button><button data-c="g">أخضر</button><button data-c="b">أزرق</button></div><canvas class="histo" id="hsCv" width="512" height="240"></canvas><div class="info-grid" id="hsI"></div></div>`; $$('#hsC button').forEach(x => x.onclick = () => { $$('#hsC button').forEach(y => y.classList.toggle('on', y === x)); updHist(); }); updHist(); };
+function updHist() {
+  const cv = $('#hsCv'); if (!cv || PANELS.tab !== 'hist') return; const mode = ($('#hsC .on') || {}).dataset?.c || 'rgb';
+  const s = Math.min(1, 400 / Math.max(S.doc.w, S.doc.h)), t = temp('histo', Math.max(1, Math.round(S.doc.w * s)), Math.max(1, Math.round(S.doc.h * s))); t.getContext('2d').drawImage(docCanvas, 0, 0, t.width, t.height);
+  const d = t.getContext('2d').getImageData(0, 0, t.width, t.height).data; const H = { r: new Float32Array(256), g: new Float32Array(256), b: new Float32Array(256), l: new Float32Array(256) }; let n = 0, sum = 0;
+  for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 8) continue; n++; H.r[d[i]]++; H.g[d[i + 1]]++; H.b[d[i + 2]]++; const l = Math.round(lumOf(d[i], d[i + 1], d[i + 2])); H.l[l]++; sum += l; }
+  const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height); const draw = (arr, col, gco) => { let mx = 0; for (let i = 2; i < 254; i++) mx = Math.max(mx, arr[i]); mx = mx || 1; x.globalCompositeOperation = gco; x.fillStyle = col; x.beginPath(); x.moveTo(0, cv.height); for (let i = 0; i < 256; i++) x.lineTo(i * 2, cv.height - Math.min(1, arr[i] / mx) * cv.height * .95); x.lineTo(512, cv.height); x.fill(); x.globalCompositeOperation = 'source-over'; };
+  if (mode === 'rgb') { draw(H.r, 'rgba(255,60,60,.9)', 'lighter'); draw(H.g, 'rgba(60,255,60,.9)', 'lighter'); draw(H.b, 'rgba(70,110,255,.9)', 'lighter'); } else draw(H[mode], mode === 'l' ? '#d8d8d8' : mode === 'r' ? '#ff4b4b' : mode === 'g' ? '#3ee05a' : '#4f7bff', 'source-over');
+  const mean = n ? sum / n : 0; let acc = 0, med = 0; for (let i = 0; i < 256; i++) { acc += H.l[i]; if (acc >= n / 2) { med = i; break; } }
+  $('#hsI').innerHTML = `<span><b>المتوسط:</b>${mean.toFixed(1)}</span><span><b>الوسيط:</b>${med}</span><span><b>البكسلات:</b>${n}</span><span><b>المقياس:</b>${Math.round(s * 100)}%</span>`;
+}
+
+/* ---------- layers panel (Photoshop style) with masks, adjustment layers, locks, fill ---------- */
+function ensureMask(L, fromSel) {
+  if (L._mask) return L._mask; const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'); x.fillStyle = '#fff';
+  if (fromSel && S.sel) x.drawImage(S.sel.mask, 0, 0); else x.fillRect(0, 0, c.width, c.height);
+  L._mask = c; touch(L); return c;
+}
+function addMask(hideAll) {
+  const L = activeLayer(); if (!L) return; if (L._mask) { L.maskEdit = true; PANELS.refresh(); return toast('للطبقة قناع بالفعل — يتم الآن تحرير القناع'); }
+  ensureMask(L, !hideAll && !!S.sel); if (hideAll) L._mask.getContext('2d').clearRect(0, 0, S.doc.w, S.doc.h);
+  L.maskEdit = true; if (S.sel && !hideAll) deselect(); requestRender(); commit('إضافة قناع طبقة'); toast('تمت إضافة قناع: ارسم بالأسود للإخفاء وبالأبيض للإظهار', 3200); if (S.tool !== 'brush' && S.tool !== 'eraser') setTool('brush');
+}
+function maskOp(k) {
+  const L = activeLayer(); if (!L || !L._mask) return toast('لا يوجد قناع لهذه الطبقة'); const m = L._mask, x = m.getContext('2d');
+  if (k === 'del') { L._mask = null; L.maskEdit = false; }
+  if (k === 'off') L.maskOff = !L.maskOff;
+  if (k === 'inv') { const c = mkCanvas(m.width, m.height), cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); cx.globalCompositeOperation = 'destination-out'; cx.drawImage(m, 0, 0); L._mask = c; }
+  if (k === 'sel') { S.sel = { mask: cloneCanvas(m), path: null }; finalizeSelection(); }
+  if (k === 'apply') { if (L.type === 'adj') return toast('قناع طبقة التعديل لا يُطبّق — يمكنك حذفه'); if (L.type === 'text') rasterize(L); ensureCovers(L); const lx = L.canvas.getContext('2d'); lx.globalCompositeOperation = 'destination-in'; lx.drawImage(m, -L.x, -L.y, S.doc.w, S.doc.h); lx.globalCompositeOperation = 'source-over'; L._mask = null; L.maskEdit = false; }
+  touch(L); requestRender(); commit({ del: 'حذف القناع', off: 'تعطيل/تمكين القناع', inv: 'عكس القناع', sel: 'تحميل القناع كتحديد', apply: 'تطبيق القناع' }[k]);
+}
+function addAdjLayer(k, silent) {
+  const L = newLayerObj(ADJ[k].n, mkCanvas(1, 1)); L.type = 'adj'; L.adj = { k, p: adjDefaults(k) };
+  ensureMask(L, !!S.sel); if (S.sel) deselect();
+  const top = S.layers.findIndex(l => l.id === S.active); S.layers.splice(top >= 0 ? top + 1 : S.layers.length, 0, L); S.active = L.id;
+  requestRender(); commit('طبقة تعديل: ' + ADJ[k].n); if (!silent) { openPanel('props'); toast('طبقة تعديل جديدة — حرّك المنزلقات وسترى النتيجة فوراً'); }
+}
+function bakeAdj(L, B) {
+  if (B.type === 'text') rasterize(B); ensureCovers(B); const work = cloneCanvas(B.canvas); runAdj(L.adj.k, work, L.adj.p);
+  const t = mkCanvas(work.width, work.height), tx = t.getContext('2d'); tx.drawImage(work, 0, 0); if (L._mask && !L.maskOff) { tx.globalCompositeOperation = 'destination-in'; tx.drawImage(L._mask, -B.x, -B.y, S.doc.w, S.doc.h); }
+  const bx = B.canvas.getContext('2d'); bx.save(); bx.globalAlpha = L.opacity; bx.globalCompositeOperation = 'source-atop'; bx.drawImage(t, 0, 0); bx.restore(); touch(B);
+}
+mergeDown = (orig => function () {
+  const L = activeLayer(); const i = S.layers.indexOf(L);
+  if (L && L.type === 'adj') { const B = S.layers[i - 1]; if (!B || B.type === 'adj') return toast('لا توجد طبقة صورة أسفلها'); bakeAdj(L, B); S.layers.splice(i, 1); S.active = B.id; requestRender(); commit('دمج طبقة التعديل'); return; }
+  if (L && L._mask && L.type !== 'adj') { maskOp('apply'); }
+  const B = S.layers[i - 1]; if (B && B._mask && B.type !== 'adj') { const keep = S.active; S.active = B.id; maskOp('apply'); S.active = keep; }
+  orig();
+})(mergeDown);
+dupLayer = (orig => function () { const L = activeLayer(); orig(); const N = activeLayer(); if (L && N && N !== L) { if (L._mask) N._mask = cloneCanvas(L._mask); if (L.type === 'adj') N.canvas = mkCanvas(1, 1); touch(N); requestRender(); } })(dupLayer);
+photoLayer = (orig => function () { const a = activeLayer(); if (a && a.type === 'adj') { for (let i = S.layers.indexOf(a); i >= 0; i--) { const l = S.layers[i]; if (l.type === 'raster' && l.visible && !l.isFrame) return l; } } return orig(); })(photoLayer);
+
+function linkToggle() {
+  const L = activeLayer(); if (!L) return; const i = S.layers.indexOf(L), B = S.layers[i - 1];
+  if (L.link) { const g = L.link; L.link = null; if (S.layers.filter(l => l.link === g).length < 2) S.layers.forEach(l => { if (l.link === g) l.link = null; }); toast('تم فك الربط'); }
+  else { if (!B) return toast('لا توجد طبقة أسفلها للربط'); const g = B.link || uid(); B.link = g; L.link = g; toast('تم ربط الطبقة بالتي أسفلها — تتحركان معاً'); }
+  PANELS.refresh(); commit('ربط الطبقات');
+}
+function ctxMenu(x, y, items) {
+  $$('.ctxm').forEach(m => m.remove()); const m = document.createElement('div'); m.className = 'ctxm';
+  items.forEach(it => { if (it === '-') { m.appendChild(document.createElement('hr')); return; } if (it[0] === 'grp') { const g = document.createElement('div'); g.className = 'grp'; g.textContent = it[1]; m.appendChild(g); return; } const b = document.createElement('button'); b.textContent = it[0]; b.onclick = () => { m.remove(); it[1](); }; m.appendChild(b); });
+  document.body.appendChild(m); m.style.left = Math.min(x, window.innerWidth - m.offsetWidth - 8) + 'px'; m.style.top = Math.min(y, window.innerHeight - m.offsetHeight - 8) + 'px';
+  setTimeout(() => document.addEventListener('pointerdown', function h(e) { if (!e.target.closest('.ctxm')) { m.remove(); document.removeEventListener('pointerdown', h); } }), 0);
+}
+function adjMenu(x, y) { ctxMenu(x, y, [['grp', 'طبقة تعديل جديدة'], ...ADJ_KEYS.filter(k => ADJ[k].g === 'adj').map(k => [ADJ[k].n + '…', () => addAdjLayer(k)]), '-', ['grp', 'طبقة تعبئة'], ['لون خالص', () => MENU_FN.solid()], ['تدرج', () => MENU_FN.gradient()]]); }
+function layerCtx(x, y) {
+  const L = activeLayer(); if (!L) return;
+  ctxMenu(x, y, [['خيارات المزج وأنماط الطبقة…', () => DLG.layerStyle()], '-', ['تكرار الطبقة', dupLayer], ['حذف الطبقة', deleteLayer], ['إعادة تسمية', () => { const r = $(`#lList .lrow[data-id="${L.id}"]`); r && r.ondblclick(); }], '-',
+    ...(L._mask ? [['تعطيل/تمكين القناع', () => maskOp('off')], ['عكس القناع', () => maskOp('inv')], ['تحميل القناع كتحديد', () => maskOp('sel')], ['تطبيق القناع', () => maskOp('apply')], ['حذف القناع', () => maskOp('del')]] : [['إضافة قناع (إظهار الكل)', () => addMask(false)], ['إضافة قناع (إخفاء الكل)', () => addMask(true)]]), '-',
+    ['إنشاء قناع قص', toggleClip], ['ربط بالطبقة السفلى / فك الربط', linkToggle], ['تحديد محتوى الطبقة', () => layerAlphaToSelection(L)], ...(L.type === 'text' ? [['تحويل النص إلى صورة', () => { rasterize(L); requestRender(); commit('تحويل إلى صورة'); }]] : []), '-',
+    ['دمج للأسفل', mergeDown], ['دمج المرئي', mergeVisible], ['تسطيح الصورة', flatten]]);
+}
+PANELS.lp = 'layers';
+PANELS.layers = function (b) {
+  if (this.lp === 'channels') return this.channels(b); if (this.lp === 'paths') return this.paths(b);
+  const L = activeLayer(), kf = this.kf || 'all', q = (this.lq || '').trim();
+  const lockBtn = (k, ic, tip) => `<button class="ib ${L && L[k] ? 'on' : ''}" data-lock="${k}" title="${tip}" aria-label="${tip}">${ICONS[ic]}</button>`;
+  b.innerHTML = `<div class="lp">
+    <div class="lp-bar"><select id="lpKind" aria-label="تصفية الطبقات">${[['all', 'النوع: الكل'], ['raster', 'بكسلات'], ['adj', 'طبقات تعديل'], ['text', 'نص'], ['fx', 'بأنماط'], ['mask', 'بقناع'], ['hidden', 'مخفية']].map(([v, n]) => `<option value="${v}" ${kf === v ? 'selected' : ''}>${n}</option>`).join('')}</select><input type="search" id="lpQ" placeholder="بحث بالاسم" value="${esc(q)}" style="flex:1"></div>
+    <div class="lp-bar"><select id="lBlend" aria-label="وضع المزج">${BLENDS.map(([v, n]) => `<option value="${v}" ${L && L.blend === v ? 'selected' : ''}>${n}</option>`).join('')}</select><span>العتامة:</span><input type="number" id="lOpN" min="0" max="100" value="${L ? Math.round(L.opacity * 100) : 100}"><span>%</span></div>
+    <div class="lp-bar"><span>قفل:</span>${lockBtn('lockAlpha', 'lockA', 'قفل البكسلات الشفافة')}${lockBtn('lockPx', 'lockP', 'قفل بكسلات الصورة (منع الرسم)')}${lockBtn('lockPos', 'lockM', 'قفل الموضع')}${lockBtn('locked', 'lockAll', 'قفل الكل')}<span class="grow"></span><span>التعبئة:</span><input type="number" id="lFillN" min="0" max="100" value="${L ? Math.round((L.fill == null ? 1 : L.fill) * 100) : 100}"><span>%</span></div>
+    <div class="lp-list layers" id="lList"></div>
+    <div class="lp-foot" id="lpFoot"></div></div>`;
+  const list = $('#lList');
+  const pass = l => (kf === 'all' || (kf === 'raster' && l.type === 'raster') || (kf === 'adj' && l.type === 'adj') || (kf === 'text' && l.type === 'text') || (kf === 'fx' && hasFx(l.fx)) || (kf === 'mask' && l._mask) || (kf === 'hidden' && !l.visible)) && (!q || String(l.name).includes(q));
+  for (let i = S.layers.length - 1; i >= 0; i--) {
+    const l = S.layers[i]; if (!pass(l)) continue; const r = document.createElement('div'); r.className = 'lrow' + (l.id === S.active ? ' on' : '') + (l.clip ? ' clip' : ''); r.dataset.id = l.id;
+    const me = l._mask && (l.maskEdit || l.type === 'adj');
+    const thumb = l.type === 'adj' ? `<span class="adjic" title="${esc(ADJ[l.adj.k]?.n || '')}">${ICONS.adjc}</span>` : `<canvas width="80" height="60" class="${me ? '' : (l.id === S.active && l._mask ? 'sel' : '')}"></canvas>`;
+    r.innerHTML = `<button class="eye ${l.visible ? '' : 'off'}" title="إظهار/إخفاء" aria-label="إظهار/إخفاء">${ICONS.eye}</button><span class="lk">${l.link ? ICONS.link : l.clip ? '↧' : ''}</span><span class="th">${thumb}${l._mask ? `<canvas class="mth ${me && l.id === S.active ? 'sel' : ''}" width="80" height="60" title="قناع الطبقة — انقر لتحريره، Shift+نقر لتعطيله" style="${l.maskOff ? 'opacity:.35' : ''}"></canvas>` : ''}</span><div class="nm">${esc(l.name)}</div><div class="tags">${l.type === 'text' ? '<b>T</b>' : ''}${hasFx(l.fx) ? '<b>fx</b>' : ''}${l.locked || l.lockPx || l.lockPos || l.lockAlpha ? `<span class="lk">${ICONS.lockAll}</span>` : ''}</div>`;
+    r.querySelector('.eye').onclick = e => { e.stopPropagation(); l.visible = !l.visible; requestRender(); commit(l.visible ? 'إظهار طبقة' : 'إخفاء طبقة'); };
+    const mth = r.querySelector('.mth'); if (mth) mth.onclick = e => { e.stopPropagation(); S.active = l.id; if (e.shiftKey) { maskOp('off'); return; } l.maskEdit = true; this.refresh(); toast('تحرير القناع: الأسود يخفي والأبيض يُظهر', 2000); };
+    const lth = r.querySelector('.th canvas:not(.mth)'); if (lth) lth.onclick = e => { e.stopPropagation(); S.active = l.id; l.maskEdit = false; this.refresh(); };
+    r.onclick = () => { S.active = l.id; this.refresh(); requestRender(false); if (l.type === 'adj' && !MOBILE()) PANELS.show('props'); };
+    r.oncontextmenu = e => { e.preventDefault(); S.active = l.id; this.refresh(); layerCtx(e.clientX, e.clientY); };
+    r.ondblclick = e => { if (l.type === 'adj') { openPanel('props'); return; } if (e.target.closest('.th')) { DLG.layerStyle(); return; } const nm = r.querySelector('.nm'); const inp = document.createElement('input'); inp.value = l.name; inp.className = 'ctl'; inp.style.cssText = 'background:var(--ground);border:1px solid var(--accent);border-radius:3px;padding:2px 4px;width:100%;color:var(--fg)'; nm.replaceWith(inp); inp.focus(); inp.select(); const done = () => { l.name = inp.value || l.name; commit('إعادة تسمية'); }; inp.onblur = done; inp.onkeydown = ev => { if (ev.key === 'Enter') inp.blur(); ev.stopPropagation(); }; };
+    r.draggable = true; r.ondragstart = e => e.dataTransfer.setData('text/layer', l.id); r.ondragover = e => e.preventDefault(); r.ondrop = e => { e.preventDefault(); const id = e.dataTransfer.getData('text/layer'); if (!id || id === l.id) return; const from = S.layers.findIndex(x => x.id === id); const it = S.layers.splice(from, 1)[0]; const to = S.layers.findIndex(x => x.id === l.id); S.layers.splice(to + 1, 0, it); requestRender(); commit('ترتيب الطبقات'); };
+    list.appendChild(r);
+  }
+  if (!list.children.length) list.innerHTML = '<div class="pane note">لا توجد طبقات مطابقة للتصفية.</div>';
+  const foot = $('#lpFoot');
+  [['link', 'ربط الطبقات', linkToggle], ['fx', 'إضافة نمط طبقة (ظل، توهج، حدّ…)', () => DLG.layerStyle()], ['mask', 'إضافة قناع طبقة', () => addMask(false)], ['adjc', 'إنشاء طبقة تعبئة أو تعديل جديدة', e => { const r = e.currentTarget.getBoundingClientRect(); adjMenu(r.left, r.top - 300); }], ['up', 'تحريك للأعلى', () => moveLayer(1)], ['down', 'تحريك للأسفل', () => moveLayer(-1)], ['newl', 'إنشاء طبقة جديدة', newEmptyLayer], ['trash', 'حذف الطبقة', deleteLayer]].forEach(([ic, tip, fn]) => { const bt = document.createElement('button'); bt.innerHTML = ICONS[ic]; bt.title = tip; bt.setAttribute('aria-label', tip); bt.onclick = fn; foot.appendChild(bt); });
+  $('#lpKind').onchange = e => { this.kf = e.target.value; this.refresh(); };
+  $('#lpQ').oninput = e => { this.lq = e.target.value; clearTimeout(this._lqT); this._lqT = setTimeout(() => { const pos = e.target.selectionStart; this.refresh(); const i = $('#lpQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }, 250); };
+  $('#lBlend').onchange = e => { const L = activeLayer(); if (L) { L.blend = e.target.value; requestRender(); commit('وضع المزج'); } };
+  $('#lOpN').onchange = e => { const L = activeLayer(); if (L) { L.opacity = clamp(+e.target.value, 0, 100) / 100; requestRender(); commit('العتامة'); } };
+  $('#lOpN').oninput = e => { const L = activeLayer(); if (L) { L.opacity = clamp(+e.target.value, 0, 100) / 100; requestRender(); } };
+  $('#lFillN').oninput = e => { const L = activeLayer(); if (L) { L.fill = clamp(+e.target.value, 0, 100) / 100; L.fxCache = null; requestRender(); } };
+  $('#lFillN').onchange = () => commit('التعبئة');
+  $$('.lp-bar [data-lock]').forEach(bt => bt.onclick = () => { const L = activeLayer(); if (!L) return; const k = bt.dataset.lock; L[k] = !L[k]; this.refresh(); commit('قفل'); });
+  this.drawThumbs();
+};
+PANELS.drawThumbs = (orig => function () {
+  orig.call(this);
+  $$('#lList .lrow').forEach(r => { const l = S.layers.find(x => x.id === r.dataset.id); const c = r.querySelector('canvas.mth'); if (!l || !c || !l._mask) return; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 80, 60); const s = Math.min(80 / S.doc.w, 60 / S.doc.h); const t = temp('mthumb', 80, 60), tx = t.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, 80, 60); tx.globalCompositeOperation = 'destination-in'; tx.drawImage(l._mask, (80 - S.doc.w * s) / 2, (60 - S.doc.h * s) / 2, S.doc.w * s, S.doc.h * s); x.drawImage(t, 0, 0); });
+})(PANELS.drawThumbs);
+/* channels */
+PANELS.channels = function (b) {
+  const ch = [['rgb', 'RGB', 'Ctrl+2'], ['r', 'أحمر', 'Ctrl+3'], ['g', 'أخضر', 'Ctrl+4'], ['b', 'أزرق', 'Ctrl+5']]; if (S.sel) ch.push(['sel', 'تحديد مؤقت (ألفا)', '']);
+  b.innerHTML = `<div class="lp"><div class="lp-list" id="chL"></div><div class="note" style="padding:8px">انقر على قناة لعرضها وحدها بالأبيض والأسود. انقر RGB للعودة.</div><div class="lp-foot"><button title="تحميل القناة كتحديد" aria-label="تحميل القناة كتحديد" id="chSel">${ICONS.select}</button><button title="حفظ التحديد كقناة" aria-label="حفظ التحديد كقناة" id="chSave">${ICONS.mask}</button></div></div>`;
+  const L = $('#chL'); const s = Math.min(96 / S.doc.w, 68 / S.doc.h); const src = temp('chsrc', Math.max(1, Math.round(S.doc.w * s)), Math.max(1, Math.round(S.doc.h * s))); src.getContext('2d').drawImage(docCanvas, 0, 0, src.width, src.height); const sd = src.getContext('2d').getImageData(0, 0, src.width, src.height);
+  ch.forEach(([k, n, kb]) => {
+    const r = document.createElement('div'); r.className = 'chan' + ((S.viewChan || 'rgb') === k ? ' on' : ''); r.innerHTML = `<button class="eye" style="background:none;border:0;color:var(--muted)">${ICONS.eye}</button><canvas width="${src.width}" height="${src.height}"></canvas><span>${n}</span><kbd>${kb}</kbd>`;
+    const c = r.querySelector('canvas'), x = c.getContext('2d');
+    if (k === 'rgb') x.drawImage(src, 0, 0); else if (k === 'sel') x.drawImage(S.sel.mask, 0, 0, c.width, c.height); else { const id = new ImageData(new Uint8ClampedArray(sd.data), sd.width, sd.height), o = { r: 0, g: 1, b: 2 }[k]; for (let i = 0; i < id.data.length; i += 4) { const v = id.data[i + o]; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } x.putImageData(id, 0, 0); }
+    r.onclick = () => { if (k === 'sel') return; S.viewChan = k === 'rgb' ? null : k; CHAN.dirty = true; requestRender(false); this.refresh(); };
+    L.appendChild(r);
+  });
+  (S.doc.channels || []).forEach((c, i) => { const r = document.createElement('div'); r.className = 'chan'; r.innerHTML = `<span></span><canvas width="48" height="34" style="background:#000"></canvas><span>${esc(c.name)}</span><kbd>×</kbd>`; const img = new Image(); img.onload = () => r.querySelector('canvas').getContext('2d').drawImage(img, 0, 0, 48, 34); img.src = c.png; r.onclick = e => { if (e.target.tagName === 'KBD') { S.doc.channels.splice(i, 1); this.refresh(); scheduleSave(); return; } const m = mkCanvas(S.doc.w, S.doc.h); m.getContext('2d').drawImage(img, 0, 0, S.doc.w, S.doc.h); S.sel = { mask: m, path: null }; finalizeSelection(); toast('تم تحميل «' + c.name + '» كتحديد'); }; L.appendChild(r); });
+  $('#chSel').onclick = () => { const k = S.viewChan; if (!k) return toast('اختر قناة لونية أولاً (أحمر/أخضر/أزرق)'); const d = docCtx.getImageData(0, 0, S.doc.w, S.doc.h).data, o = { r: 0, g: 1, b: 2 }[k], arr = new Uint8Array(S.doc.w * S.doc.h); for (let i = 0; i < arr.length; i++) arr[i] = d[i * 4 + o]; setSelection(maskFromArray(arr), null); toast('تم تحميل القناة كتحديد'); };
+  $('#chSave').onclick = () => { if (!S.sel) return toast('حدد منطقة أولاً'); S.doc.channels = S.doc.channels || []; S.doc.channels.push({ name: 'ألفا ' + (S.doc.channels.length + 1), png: S.sel.mask.toDataURL() }); this.refresh(); scheduleSave(); toast('تم حفظ التحديد كقناة'); };
+};
+const CHAN = { dirty: true, c: null };
+/* paths */
+PANELS.paths = function (b) {
+  const P2 = S.doc.paths || [];
+  b.innerHTML = `<div class="lp"><div class="lp-list" id="paL"></div>${P2.length ? '' : '<div class="note" style="padding:8px">لا توجد مسارات. استخدم أداة القلم (P) لرسم مسار ثم «حفظ المسار».</div>'}<div class="lp-foot"><button id="paPen" title="أداة القلم" aria-label="أداة القلم">${ICONS.pen}</button><button id="paSel" title="تحميل المسار كتحديد" aria-label="تحميل المسار كتحديد">${ICONS.select}</button><button id="paFill" title="تعبئة المسار باللون الأمامي" aria-label="تعبئة المسار">${ICONS.fill}</button><button id="paStroke" title="حدّ المسار بالفرشاة" aria-label="حدّ المسار">${ICONS.brush}</button><button id="paDel" title="حذف المسار" aria-label="حذف المسار">${ICONS.trash}</button></div></div>`;
+  const L = $('#paL');
+  P2.forEach((p, i) => { const r = document.createElement('div'); r.className = 'chan' + (PEN.sel === i ? ' on' : ''); r.innerHTML = `<span></span><canvas width="48" height="34" style="background:#fff"></canvas><span>${esc(p.name)}</span><kbd></kbd>`; const x = r.querySelector('canvas').getContext('2d'), s = Math.min(48 / S.doc.w, 34 / S.doc.h); x.scale(s, s); x.lineWidth = 2 / s; x.strokeStyle = '#000'; x.stroke(pathOf(p.pts, p.closed)); r.onclick = () => { PEN.sel = i; PEN.pts = JSON.parse(JSON.stringify(p.pts)); PEN.closed = p.closed; requestRender(false); this.refresh(); }; r.ondblclick = () => { const n = prompt('اسم المسار', p.name); if (n) { p.name = n; scheduleSave(); this.refresh(); } }; L.appendChild(r); });
+  $('#paPen').onclick = () => pickTool('pen'); $('#paSel').onclick = () => PEN.act('sel'); $('#paFill').onclick = () => PEN.act('fill'); $('#paStroke').onclick = () => PEN.act('stroke');
+  $('#paDel').onclick = () => { if (PEN.sel == null || !P2[PEN.sel]) return toast('اختر مساراً'); P2.splice(PEN.sel, 1); PEN.sel = null; PEN.reset(true); this.refresh(); scheduleSave(); };
+};
+
+/* properties for adjustment layers (live, non-destructive) */
+PANELS.props = (orig => function (b) {
+  const L = activeLayer(); if (!L || L.type !== 'adj') return orig.call(this, b);
+  const A = ADJ[L.adj.k]; b.innerHTML = `<div class="pane"><div class="subhead">${ICONS.adjc} ${esc(A.n)} — طبقة تعديل</div><div id="apS" style="display:flex;flex-direction:column;gap:10px"></div><div class="icon-row"><button class="btn sm" id="apReset">إعادة الضبط</button><button class="btn sm" id="apEye">${L.visible ? 'إخفاء الأثر' : 'إظهار الأثر'}</button><button class="btn sm" id="apClip">${L.clip ? 'إلغاء القص' : 'قص على الطبقة السفلى فقط'}</button><button class="btn sm" id="apInv">عكس القناع</button></div><div class="note">ارسم بالفرشاة السوداء على الطبقة لإخفاء التأثير من أماكن معينة، وبالبيضاء لإرجاعه.</div></div>`;
+  const box = $('#apS'); let ct = 0;
+  A.p.forEach(q => { const l = document.createElement('label'); l.className = 'prop'; const v = L.adj.p[q[0]];
+    if (q[2] === 'color') { l.innerHTML = `${q[1]}<input type="color" value="${v}"><span></span>`; l.querySelector('input').oninput = e => { L.adj.p[q[0]] = e.target.value; requestRender(); clearTimeout(ct); ct = setTimeout(() => commit('تعديل: ' + A.n), 400); }; }
+    else { l.innerHTML = `${q[1]}<input type="range" min="${q[2]}" max="${q[3]}" step="${q[5] || 1}" value="${v}"><output>${v}</output>`; const i = l.querySelector('input'); i.oninput = () => { L.adj.p[q[0]] = +i.value; l.querySelector('output').textContent = i.value; requestRender(); }; i.onchange = () => commit('تعديل: ' + A.n); }
+    box.appendChild(l); });
+  if (!A.p.length) box.innerHTML = '<div class="note">هذا التعديل لا يحتاج إعدادات — يمكنك تغيير العتامة ووضع المزج من لوحة الطبقات.</div>';
+  $('#apReset').onclick = () => { L.adj.p = adjDefaults(L.adj.k); requestRender(); commit('إعادة ضبط'); this.refresh(); };
+  $('#apEye').onclick = () => { L.visible = !L.visible; requestRender(); commit('إظهار/إخفاء'); this.refresh(); };
+  $('#apClip').onclick = () => { toggleClip(); this.refresh(); };
+  $('#apInv').onclick = () => maskOp('inv');
+})(PANELS.props);
+
+/* ---------- painting on masks, locks ---------- */
+paintBegin = (orig => function (kind, p, e) {
+  P.maskOf = null; const L = activeLayer();
+  if (L && L.type === 'adj' && !L._mask) ensureMask(L);
+  if (L && L._mask && (L.maskEdit || L.type === 'adj') && kind !== 'clone' && kind !== 'retouch') {
+    if (L.locked) { toast('الطبقة مقفلة'); return false; }
+    const M = L._mask; if (M.width !== S.doc.w || M.height !== S.doc.h) { const c = mkCanvas(S.doc.w, S.doc.h); c.getContext('2d').drawImage(M, 0, 0, S.doc.w, S.doc.h); L._mask = c; }
+    const proxy = { canvas: L._mask, x: 0, y: 0, ver: 0, fxCache: null };
+    const lum = (S.fg.r * .299 + S.fg.g * .587 + S.fg.b * .114) / 255; const o0 = S.opts[kind];
+    const erase = kind === 'eraser' ? false : lum < .5; const str = kind === 'eraser' ? 1 : erase ? 1 - lum : lum;
+    Object.assign(P, { on: true, kind, L: proxy, o: { ...o0, opacity: (o0.opacity == null ? 1 : o0.opacity) * str }, base: cloneCanvas(L._mask), buf: temp('strokebuf', S.doc.w, S.doc.h), last: p, pending: false, erase, pressure: e.pointerType === 'pen', maskOf: L });
+    dabLine(p, p, e.pressure || .5); scheduleComposite(); return true;
+  }
+  if (L && L.type === 'adj') { toast('هذه طبقة تعديل — اختر طبقة الصورة لهذه الأداة'); return false; }
+  if (L && L.lockPx) { toast('بكسلات الطبقة مقفلة — افتح القفل من لوحة الطبقات'); return false; }
+  return orig(kind, p, e);
+})(paintBegin);
+paintComposite = (orig => function () {
+  orig();
+  if (P.maskOf) { touch(P.maskOf); return; }
+  const L = P.L; if (L && L.lockAlpha && P.kind !== 'retouch' && P.base) { const x = L.canvas.getContext('2d'); x.save(); x.globalCompositeOperation = 'destination-in'; x.drawImage(P.base, 0, 0); x.restore(); }
+})(paintComposite);
+
+/* ---------- extended tools: heal, red eye, history brush, smudge, liquify, quick select, pen ---------- */
+const XT = {};
+function editableLayer() { const L = activeLayer(); if (!L) { toast('اختر طبقة أولاً'); return null; } if (L.type === 'adj') { toast('هذه طبقة تعديل — اختر طبقة الصورة'); return null; } if (L.locked || L.lockPx) { toast('الطبقة مقفلة'); return null; } if (L.type === 'text') rasterize(L); ensureCovers(L); return L; }
+function softTip(size, hard) { return brushTip(Math.max(1, size), hard, 'rgba(255,255,255,1)'); }
+/* content-aware style fill (onion-peel diffusion from the edges inward) */
+function inpaint(L, mask) {
+  const b = contentBounds(mask); if (!b) return false; const pad = 6;
+  const X0 = Math.max(0, b.x - pad), Y0 = Math.max(0, b.y - pad), X1 = Math.min(S.doc.w, b.x + b.w + pad), Y1 = Math.min(S.doc.h, b.y + b.h + pad), w = X1 - X0, h = Y1 - Y0; if (w < 2 || h < 2) return false;
+  const ctx = L.canvas.getContext('2d'); const id = ctx.getImageData(X0 - L.x, Y0 - L.y, w, h), d = id.data, md = mask.getContext('2d').getImageData(X0, Y0, w, h).data;
+  const n = w * h, known = new Uint8Array(n), F = new Float32Array(n * 4), orig = new Uint8ClampedArray(d);
+  let q = [], hole = 0; for (let i = 0; i < n; i++) { if (md[i * 4 + 3] < 24) { known[i] = 1; for (let c = 0; c < 4; c++) F[i * 4 + c] = d[i * 4 + c]; } else hole++; }
+  if (!hole) return false;
+  for (let i = 0; i < n; i++) if (!known[i]) { const x = i % w, y = (i / w) | 0; if ((x > 0 && known[i - 1]) || (x < w - 1 && known[i + 1]) || (y > 0 && known[i - w]) || (y < h - 1 && known[i + w])) { q.push(i); known[i] = 2; } }
+  const N8 = [-1, 1, -w, w, -w - 1, -w + 1, w - 1, w + 1];
+  let guard = 0;
+  while (q.length && guard++ < w + h + 50) {
+    const next = [];
+    for (const i of q) { const x = i % w; let s0 = 0, s1 = 0, s2 = 0, s3 = 0, wt = 0; for (let k = 0; k < 8; k++) { const j = i + N8[k]; if (j < 0 || j >= n) continue; const jx = j % w; if (Math.abs(jx - x) > 1 || known[j] !== 1) continue; const ww = k < 4 ? 1 : .7; s0 += F[j * 4] * ww; s1 += F[j * 4 + 1] * ww; s2 += F[j * 4 + 2] * ww; s3 += F[j * 4 + 3] * ww; wt += ww; } if (wt) { F[i * 4] = s0 / wt; F[i * 4 + 1] = s1 / wt; F[i * 4 + 2] = s2 / wt; F[i * 4 + 3] = s3 / wt; } }
+    for (const i of q) known[i] = 1;
+    for (const i of q) { const x = i % w; for (let k = 0; k < 4; k++) { const j = i + N8[k]; if (j < 0 || j >= n) continue; if (Math.abs((j % w) - x) > 1) continue; if (!known[j]) { known[j] = 2; next.push(j); } } }
+    q = next;
+  }
+  /* smooth the filled area a little and add grain sampled from the surroundings */
+  const tmp = new ImageData(new Uint8ClampedArray(F.length), w, h); for (let i = 0; i < F.length; i++) tmp.data[i] = F[i];
+  const bl = new ImageData(new Uint8ClampedArray(tmp.data), w, h); FILTERS.blurImageData(bl, Math.max(1, Math.min(6, Math.sqrt(hole) / 18)));
+  let gr = 0, gn = 0; for (let i = 0; i < n; i += 7) if (md[i * 4 + 3] < 24 && i % w > 0) { gr += Math.abs(orig[i * 4] - orig[(i - 1) * 4]); gn++; } const grain = gn ? Math.min(14, gr / gn * .8) : 3;
+  for (let i = 0; i < n; i++) { const a = md[i * 4 + 3] / 255; if (!a) continue; const nz = (Math.random() - .5) * grain; for (let c = 0; c < 3; c++) d[i * 4 + c] = orig[i * 4 + c] * (1 - a) + (bl.data[i * 4 + c] + nz) * a; d[i * 4 + 3] = orig[i * 4 + 3] * (1 - a) + bl.data[i * 4 + 3] * a; }
+  ctx.putImageData(id, X0 - L.x, Y0 - L.y); touch(L); return true;
+}
+XT.heal = {
+  down(p) { const L = editableLayer(); if (!L) { D.mode = null; return; } this.L = L; this.m = mkCanvas(S.doc.w, S.doc.h); this.last = p; this.dab(p); requestRender(false); },
+  dab(p) { const o = S.opts.heal, t = softTip(o.size, Math.max(.3, o.hardness)); this.m.getContext('2d').drawImage(t, p.x - t.width / 2, p.y - t.height / 2); this.dirty = true; },
+  move(p) { const a = this.last, d = Math.hypot(p.x - a.x, p.y - a.y), st = Math.max(1, S.opts.heal.size * .2); for (let t = st; t <= d; t += st) this.dab({ x: a.x + (p.x - a.x) * t / d, y: a.y + (p.y - a.y) * t / d }); if (d >= st) this.last = p; requestRender(false); },
+  up() { const L = this.L; if (!L) return; let m = this.m; if (S.sel) { const x = m.getContext('2d'); x.globalCompositeOperation = 'destination-in'; x.drawImage(S.sel.mask, 0, 0); } if (inpaint(L, m)) { requestRender(); commit('معالجة موضعية'); } this.m = null; this.L = null; requestRender(false); },
+  overlay(x) { if (this.m) { if (this.dirty || !this.sil) { this.sil = silhouette(this.m, '#000'); this.dirty = false; } x.globalAlpha = .45; x.drawImage(this.sil, 0, 0); x.globalAlpha = 1; } else this.sil = null; }
+};
+XT.redeye = {
+  down(p) {
+    const L = editableLayer(); if (!L) { D.mode = null; return; } const o = S.opts.redeye, R = o.size / 2, x0 = Math.round(p.x - R - L.x), y0 = Math.round(p.y - R - L.y), s = Math.ceil(R * 2);
+    const ctx = L.canvas.getContext('2d'); const ax = Math.max(0, x0), ay = Math.max(0, y0), w = Math.min(L.canvas.width, x0 + s) - ax, h = Math.min(L.canvas.height, y0 + s) - ay; if (w <= 0 || h <= 0) return;
+    const id = ctx.getImageData(ax, ay, w, h), d = id.data; let hit = 0;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const dx = ax + i - (p.x - L.x), dy = ay + j - (p.y - L.y), dd = Math.hypot(dx, dy) / R; if (dd > 1) continue; const k = (j * w + i) * 4, r = d[k], g = d[k + 1], b = d[k + 2]; const red = r - Math.max(g, b); if (red < 25 || r < 60) continue; const f = Math.min(1, red / 60) * (dd > .8 ? (1 - dd) / .2 : 1); const nv = (g + b) / 2 * (1 - o.darken * .7); d[k] = r * (1 - f) + nv * f; d[k + 1] = g * (1 - f * o.darken * .3); d[k + 2] = b * (1 - f * o.darken * .3); hit++; }
+    ctx.putImageData(id, ax, ay); touch(L); requestRender(); if (hit) commit('إزالة العين الحمراء'); else toast('لم يتم العثور على احمرار هنا — انقر على البؤبؤ مباشرة');
+  }
+};
+XT.histbrush = {
+  down(p) { const L = editableLayer(); if (!L) { D.mode = null; return; } const st = HIST.stack.find(s => s.layers.some(r => r.props.id === L.id)); if (!st) { toast('لا توجد حالة سابقة لهذه الطبقة'); D.mode = null; return; } const r = st.layers.find(r => r.props.id === L.id); this.src = { c: r.snap.canvas, x: r.props.x, y: r.props.y }; this.L = L; this.last = p; this.dab(p); },
+  dab(p) { const o = S.opts.histbrush, t = softTip(o.size, o.hardness), tw = t.width, k = temp('hbdab', tw, tw), kx = k.getContext('2d'); kx.drawImage(t, 0, 0); kx.globalCompositeOperation = 'source-in'; kx.drawImage(this.src.c, this.src.x - (p.x - tw / 2), this.src.y - (p.y - tw / 2)); const L = this.L, x = L.canvas.getContext('2d'); x.save(); x.globalAlpha = o.opacity * .35; x.drawImage(k, p.x - tw / 2 - L.x, p.y - tw / 2 - L.y); x.restore(); touch(L); },
+  move(p) { const a = this.last, d = Math.hypot(p.x - a.x, p.y - a.y), st = Math.max(1, S.opts.histbrush.size * .15); for (let t = st; t <= d; t += st) this.dab({ x: a.x + (p.x - a.x) * t / d, y: a.y + (p.y - a.y) * t / d }); if (d >= st) this.last = p; requestRender(); },
+  up() { if (this.L) commit('فرشاة السجل'); this.L = null; }
+};
+XT.smudge = {
+  down(p) { const L = editableLayer(); if (!L) { D.mode = null; return; } this.L = L; this.last = p; },
+  dab(a, b) { const o = S.opts.smudge, L = this.L, t = softTip(o.size, .35), tw = t.width, k = temp('smdab', tw, tw), kx = k.getContext('2d'); kx.drawImage(L.canvas, -(a.x - L.x - tw / 2), -(a.y - L.y - tw / 2)); kx.globalCompositeOperation = 'destination-in'; kx.drawImage(t, 0, 0); const x = L.canvas.getContext('2d'); x.save(); x.globalAlpha = o.strength; x.drawImage(k, b.x - L.x - tw / 2, b.y - L.y - tw / 2); x.restore(); },
+  move(p) { const a = this.last, d = Math.hypot(p.x - a.x, p.y - a.y), st = Math.max(1, S.opts.smudge.size * .12); if (d < st) return; let prev = a; for (let t = st; t <= d; t += st) { const q = { x: a.x + (p.x - a.x) * t / d, y: a.y + (p.y - a.y) * t / d }; this.dab(prev, q); prev = q; } this.last = prev; touch(this.L); requestRender(); },
+  up() { if (this.L) commit('إصبع'); this.L = null; }
+};
+XT.liquify = {
+  down(p) { const L = editableLayer(); if (!L) { D.mode = null; return; } this.L = L; this.last = p; },
+  move(p) {
+    const a = this.last, dx = p.x - a.x, dy = p.y - a.y; if (Math.hypot(dx, dy) < 2) return; const L = this.L, o = S.opts.liquify, R = o.size / 2;
+    const x0 = Math.round(p.x - R - L.x), y0 = Math.round(p.y - R - L.y), s = Math.ceil(R * 2), ax = Math.max(0, x0), ay = Math.max(0, y0), w = Math.min(L.canvas.width, x0 + s) - ax, h = Math.min(L.canvas.height, y0 + s) - ay; if (w <= 2 || h <= 2) { this.last = p; return; }
+    const ctx = L.canvas.getContext('2d'), id = ctx.getImageData(ax, ay, w, h), src = new Uint8ClampedArray(id.data), d = id.data, cx = p.x - L.x - ax, cy = p.y - L.y - ay;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const r = Math.hypot(i - cx, j - cy) / R; if (r >= 1) continue; const f = (1 - r * r) * (1 - r * r) * o.strength * 1.6; const sx = clamp(i - dx * f, 0, w - 1), sy = clamp(j - dy * f, 0, h - 1); const x1 = sx | 0, y1 = sy | 0, x2 = Math.min(w - 1, x1 + 1), y2 = Math.min(h - 1, y1 + 1), fx = sx - x1, fy = sy - y1, k = (j * w + i) * 4; for (let c = 0; c < 4; c++) { const v = src[(y1 * w + x1) * 4 + c] * (1 - fx) * (1 - fy) + src[(y1 * w + x2) * 4 + c] * fx * (1 - fy) + src[(y2 * w + x1) * 4 + c] * (1 - fx) * fy + src[(y2 * w + x2) * 4 + c] * fx * fy; d[k + c] = v; } }
+    ctx.putImageData(id, ax, ay); touch(L); this.last = p; requestRender();
+  },
+  up() { if (this.L) commit('تسييل'); this.L = null; }
+};
+XT.quick = {
+  down(p, e) { const w = S.doc.w, h = S.doc.h; this.data = sampleSource(true).data; this.acc = new Uint8Array(w * h); this.prev = mkCanvas(w, h); this.mode = e.altKey ? 'sub' : S.sel ? 'add' : 'new'; this.last = p; this.add(p); },
+  add(p) {
+    const w = S.doc.w, h = S.doc.h, o = S.opts.quick, R = Math.max(6, o.size * 2.2), m = floodMask(this.data, w, h, p.x, p.y, o.tolerance, true);
+    const x0 = Math.max(0, Math.floor(p.x - R)), y0 = Math.max(0, Math.floor(p.y - R)), x1 = Math.min(w - 1, Math.ceil(p.x + R)), y1 = Math.min(h - 1, Math.ceil(p.y + R)); if (x1 < x0 || y1 < y0) return;
+    const px = this.prev.getContext('2d'), id = px.getImageData(x0, y0, x1 - x0 + 1, y1 - y0 + 1), iw = x1 - x0 + 1;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * w + x; if (m[i] && (x - p.x) ** 2 + (y - p.y) ** 2 <= R * R) { this.acc[i] = 255; const k = ((y - y0) * iw + (x - x0)) * 4; id.data[k] = 30; id.data[k + 1] = 140; id.data[k + 2] = 255; id.data[k + 3] = 110; } }
+    px.putImageData(id, x0, y0); requestRender(false);
+  },
+  move(p) { if (Math.hypot(p.x - this.last.x, p.y - this.last.y) < S.opts.quick.size * .5) return; this.add(p); this.last = p; },
+  up() { if (!this.acc) return; setSelection(maskFromArray(this.acc), null, this.mode); this.acc = null; this.prev = null; this.data = null; },
+  overlay(x) { if (this.prev) x.drawImage(this.prev, 0, 0); }
+};
+function pathOf(pts, closed) {
+  const p = new Path2D(); if (!pts.length) return p; p.moveTo(pts[0].x, pts[0].y);
+  const seg = (a, b) => { if (!a.hx && !a.hy && !b.hx && !b.hy) p.lineTo(b.x, b.y); else p.bezierCurveTo(a.x + (a.hx || 0), a.y + (a.hy || 0), b.x - (b.hx || 0), b.y - (b.hy || 0), b.x, b.y); };
+  for (let i = 1; i < pts.length; i++) seg(pts[i - 1], pts[i]); if (closed && pts.length > 2) { seg(pts[pts.length - 1], pts[0]); p.closePath(); } return p;
+}
+const PEN = {
+  pts: [], closed: false, sel: null,
+  reset(render) { this.pts = []; this.closed = false; this.sel = null; if (render) requestRender(false); },
+  finish(close) { if (this.pts.length < 2) return toast('أضف نقطتين على الأقل'); if (close !== false) this.closed = true; requestRender(false); toast('اكتمل المسار — اختر من الشريط العلوي: تحديد، تعبئة، حدّ أو شكل', 3000); },
+  path() { return pathOf(this.pts, this.closed); },
+  act(k) {
+    if (this.pts.length < 2) return toast('ارسم مساراً بأداة القلم أولاً');
+    const path = this.path();
+    if (k === 'save') { S.doc.paths = S.doc.paths || []; const rec = { name: 'مسار ' + (S.doc.paths.length + 1), pts: JSON.parse(JSON.stringify(this.pts)), closed: this.closed }; if (this.sel != null && S.doc.paths[this.sel]) S.doc.paths[this.sel] = { ...S.doc.paths[this.sel], pts: rec.pts, closed: rec.closed }; else { S.doc.paths.push(rec); this.sel = S.doc.paths.length - 1; } scheduleSave(); PANELS.lp = 'paths'; PANELS.refresh(); return toast('تم حفظ المسار في لوحة المسارات'); }
+    if (k === 'sel') { const cp = pathOf(this.pts, true); setSelection(maskFromPath(cp), cp); return toast('تم تحويل المسار إلى تحديد'); }
+    if (k === 'fill' || k === 'shape') {
+      const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'); x.fillStyle = rgba(S.fg, 1); x.fill(pathOf(this.pts, true));
+      if (k === 'shape') { addLayer(newLayerObj('شكل ' + (S.layers.length + 1), c)); requestRender(); commit('شكل من مسار'); } else applyBufferToLayer(c, 1, 'تعبئة المسار'); return;
+    }
+    if (k === 'stroke') { const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'); x.strokeStyle = rgba(S.fg, 1); x.lineWidth = Math.max(1, S.opts.brush.size / 3); x.lineCap = x.lineJoin = 'round'; x.stroke(path); applyBufferToLayer(c, 1, 'حدّ المسار'); }
+  }
+};
+XT.pen = {
+  down(p, e) {
+    const z = S.zoom, P0 = PEN.pts[0];
+    if (PEN.closed) { PEN.reset(); }
+    if (P0 && PEN.pts.length > 1 && Math.hypot(p.x - P0.x, p.y - P0.y) < 10 / z) { PEN.finish(true); D.mode = null; return; }
+    if (e.altKey && PEN.pts.length) { const last = PEN.pts[PEN.pts.length - 1]; last.hx = last.hy = 0; D.mode = null; requestRender(false); return; }
+    PEN.pts.push({ x: p.x, y: p.y, hx: 0, hy: 0 }); this.cur = PEN.pts[PEN.pts.length - 1]; requestRender(false);
+  },
+  move(p) { const c = this.cur; if (!c) return; c.hx = p.x - c.x; c.hy = p.y - c.y; if (Math.hypot(c.hx, c.hy) < 3 / S.zoom) c.hx = c.hy = 0; requestRender(false); },
+  up() { this.cur = null; },
+  overlay(x, z) {
+    if (!PEN.pts.length) return; x.lineWidth = 1.5 / z; x.strokeStyle = '#2f9bff'; x.setLineDash([]); x.stroke(PEN.path());
+    if (!PEN.closed && HOVER.in && S.tool === 'pen') { const last = PEN.pts[PEN.pts.length - 1], hp = { x: (HOVER.sx - S.panX) / z, y: (HOVER.sy - S.panY) / z }; x.globalAlpha = .6; x.beginPath(); x.moveTo(last.x, last.y); x.bezierCurveTo(last.x + last.hx, last.y + last.hy, hp.x, hp.y, hp.x, hp.y); x.stroke(); x.globalAlpha = 1; }
+    PEN.pts.forEach((q, i) => { const s = 7 / z; x.fillStyle = i === PEN.pts.length - 1 ? '#2f9bff' : '#fff'; x.strokeStyle = '#2f9bff'; x.fillRect(q.x - s / 2, q.y - s / 2, s, s); x.strokeRect(q.x - s / 2, q.y - s / 2, s, s); if (q.hx || q.hy) { x.beginPath(); x.moveTo(q.x - q.hx, q.y - q.hy); x.lineTo(q.x + q.hx, q.y + q.hy); x.stroke(); [[1, 1], [-1, -1]].forEach(([a]) => { x.beginPath(); x.arc(q.x + q.hx * a, q.y + q.hy * a, 3.5 / z, 0, 7); x.fill(); x.stroke(); }); } });
+  }
+};
+/* guides & ruler drag */
+S.doc.guides = S.doc.guides || [];
+function guideHit(p) { const z = S.zoom, g = S.doc.guides || []; for (let i = g.length - 1; i >= 0; i--) { const q = g[i]; if (q.o === 'v' ? Math.abs(p.x - q.p) * z < 5 : Math.abs(p.y - q.p) * z < 5) return i; } return -1; }
+/* layer bounds handle hit for "show transform controls" */
+const BOUNDS = { ver: -1, id: null, b: null };
+function activeBounds() { const L = activeLayer(); if (!L || L.type === 'adj') return null; if (BOUNDS.id !== L.id || BOUNDS.ver !== L.ver) { BOUNDS.id = L.id; BOUNDS.ver = L.ver; const b = L.type === 'text' ? { x: 0, y: 0, w: L.canvas.width, h: L.canvas.height } : contentBounds(L.canvas); BOUNDS.b = b; } const b = BOUNDS.b; return b ? { x: L.x + b.x, y: L.y + b.y, w: b.w, h: b.h } : null; }
+
+TOOLS.down = (orig => function (p, e) {
+  const t = S.tool;
+  if (D.space || e.button === 1 || TF.active) return orig.call(this, p, e);
+  if (XT[t]) { D.mode = 'x:' + t; XT[t].down(p, e); if (D.mode === 'x:' + t && !XT[t].move && !XT[t].up) D.mode = null; return; }
+  if (t === 'move') {
+    const gi = guideHit(p); if (gi >= 0 && (S.doc.guides || []).length) { D.mode = 'guide'; D.gi = gi; return; }
+    const L = activeLayer();
+    if (L && L.lockPos) { toast('موضع الطبقة مقفل'); return; }
+    if (S.opts.move.showTf && L) { const b = activeBounds(); if (b) { const hs = 9 / S.zoom, hp = [[b.x, b.y], [b.x + b.w / 2, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h / 2], [b.x + b.w, b.y + b.h], [b.x + b.w / 2, b.y + b.h], [b.x, b.y + b.h], [b.x, b.y + b.h / 2]]; if (hp.some(q => Math.hypot(q[0] - p.x, q[1] - p.y) < hs)) { TOOLS.startTransform(); return orig.call(this, p, e); } } }
+  }
+  orig.call(this, p, e);
+  if (D.mode === 'move' && D.L) { if (D.L.lockPos) { D.mode = null; toast('موضع الطبقة مقفل'); return; } D.linked = D.L.link ? S.layers.filter(l => l !== D.L && l.link === D.L.link).map(l => ({ l, x: l.x, y: l.y, ax: l.text?.ax, ay: l.text?.ay })) : []; }
+})(TOOLS.down);
+TOOLS.move = (orig => function (p, e) {
+  const m = D.mode;
+  if (typeof m === 'string' && m.startsWith('x:')) { const h = XT[m.slice(2)]; h && h.move && h.move(p, e); return; }
+  if (m === 'guide') { const g = S.doc.guides[D.gi]; g.p = Math.round(g.o === 'v' ? p.x : p.y); requestRender(false); return; }
+  orig.call(this, p, e);
+  if (m === 'move' && D.L && D.linked && D.linked.length) { const dx = D.L.x - D.o.x, dy = D.L.y - D.o.y; D.linked.forEach(r => { r.l.x = r.x + dx; r.l.y = r.y + dy; if (r.l.type === 'text') { r.l.text.ax = r.ax + dx; r.l.text.ay = r.ay + dy; } }); requestRender(); }
+})(TOOLS.move);
+TOOLS.up = (orig => function (p, e) {
+  const m = D.mode;
+  if (typeof m === 'string' && m.startsWith('x:')) { D.mode = null; const h = XT[m.slice(2)]; h && h.up && h.up(p, e); return; }
+  if (m === 'guide') { D.mode = null; const g = S.doc.guides[D.gi]; const r = VP.getBoundingClientRect(); if (p.sx < 18 || p.sy < 44 || (g.o === 'v' ? (g.p < 0 || g.p > S.doc.w) : (g.p < 0 || g.p > S.doc.h))) { S.doc.guides.splice(D.gi, 1); toast('تم حذف الدليل'); } scheduleSave(); requestRender(false); return; }
+  orig.call(this, p, e);
+})(TOOLS.up);
+TOOLS_OVERLAY = (orig => function () {
+  orig(); const z = S.zoom, x = vctx;
+  x.save(); x.setTransform(DPR * z, 0, 0, DPR * z, DPR * S.panX, DPR * S.panY);
+  const h = XT[S.tool]; if (h && h.overlay) h.overlay(x, z);
+  if (S.tool === 'move' && S.opts.move.showTf && !TF.active && !D.mode) { const b = activeBounds(); if (b) { x.strokeStyle = ACC(); x.lineWidth = 1 / z; x.setLineDash([]); x.strokeRect(b.x, b.y, b.w, b.h); const s = 7 / z; [[b.x, b.y], [b.x + b.w / 2, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h / 2], [b.x + b.w, b.y + b.h], [b.x + b.w / 2, b.y + b.h], [b.x, b.y + b.h], [b.x, b.y + b.h / 2]].forEach(q => { x.fillStyle = '#fff'; x.fillRect(q[0] - s / 2, q[1] - s / 2, s, s); x.strokeRect(q[0] - s / 2, q[1] - s / 2, s, s); }); } }
+  x.restore();
+  /* brush cursor for the new brush-like tools */
+  const sz = { heal: 1, histbrush: 1, smudge: 1, liquify: 1, quick: 1, redeye: 1 }[S.tool] && S.opts[S.tool].size;
+  if (sz && HOVER.in && !D.space) { const r = sz * z / 2; x.save(); x.setTransform(DPR, 0, 0, DPR, 0, 0); x.lineWidth = 1; x.strokeStyle = 'rgba(0,0,0,.7)'; x.beginPath(); x.arc(HOVER.sx, HOVER.sy, Math.max(1.5, r), 0, 7); x.stroke(); x.strokeStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(HOVER.sx, HOVER.sy, Math.max(1.5, r) - 1, 0, 7); x.stroke(); x.restore(); }
+})(TOOLS_OVERLAY);
+
+/* ---------- rulers, guides, channel view, doc tab ---------- */
+const RH = $('#rulerH'), RV = $('#rulerV');
+function drawRulers() {
+  const vp = VP; vp.classList.toggle('norulers', !S.rulers); if (!S.rulers || MOBILE()) return;
+  const cs = getComputedStyle(document.documentElement), bgc = cs.getPropertyValue('--panel').trim() || '#323232', fgc = cs.getPropertyValue('--muted').trim() || '#aaa', ln = cs.getPropertyValue('--line').trim() || '#111';
+  const z = S.zoom, steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000]; const step = steps.find(s => s * z >= 64) || 10000, sub = step / (step % 5 === 0 ? 10 : 4);
+  [[RH, 'h'], [RV, 'v']].forEach(([c, o]) => {
+    const r = c.getBoundingClientRect(); if (!r.width) return; const W = Math.round(r.width * DPR), H = Math.round(r.height * DPR); if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    const x = c.getContext('2d'); x.setTransform(DPR, 0, 0, DPR, 0, 0); x.fillStyle = bgc; x.fillRect(0, 0, r.width, r.height); x.fillStyle = fgc; x.strokeStyle = fgc; x.lineWidth = 1; x.font = '9px ' + getComputedStyle(document.body).fontFamily; x.textBaseline = 'top';
+    const off = o === 'h' ? 18 : 44, pan = o === 'h' ? S.panX : S.panY, len = o === 'h' ? r.width : r.height;
+    const d0 = (off - pan) / z, d1 = (off + len - pan) / z; x.beginPath();
+    for (let v = Math.floor(d0 / sub) * sub; v <= d1; v += sub) { const s = Math.round(v * z + pan - off) + .5, major = Math.abs(v / step - Math.round(v / step)) < 1e-6, l = major ? 18 : (Math.abs((v / (step / 2)) - Math.round(v / (step / 2))) < 1e-6 ? 8 : 4);
+      if (o === 'h') { x.moveTo(s, 18); x.lineTo(s, 18 - l); if (major) { x.save(); x.direction = 'ltr'; x.fillText(String(Math.round(v)), s + 2, 1); x.restore(); } }
+      else { x.moveTo(18, s); x.lineTo(18 - l, s); if (major) { x.save(); x.translate(1, s + 2); x.rotate(Math.PI / 2); x.direction = 'ltr'; x.fillText(String(Math.round(v)), 0, -8); x.restore(); } } }
+    x.stroke(); x.strokeStyle = ln; x.beginPath(); if (o === 'h') { x.moveTo(0, 17.5); x.lineTo(r.width, 17.5); } else { x.moveTo(17.5, 0); x.lineTo(17.5, r.height); } x.stroke();
+    if (HOVER.in) { x.strokeStyle = '#2f9bff'; x.beginPath(); if (o === 'h') { const s = HOVER.sx - 18 + .5; x.moveTo(s, 0); x.lineTo(s, 18); } else { const s = HOVER.sy - 44 + .5; x.moveTo(0, s); x.lineTo(18, s); } x.stroke(); }
+  });
+}
+renderView = (orig => function () {
+  const was = docDirty; orig();
+  if (S.viewChan) { if (was || CHAN.dirty || !CHAN.c) { const c = CHAN.c = CHAN.c || mkCanvas(1, 1); c.width = S.doc.w; c.height = S.doc.h; const x = c.getContext('2d'), id = docCtx.getImageData(0, 0, S.doc.w, S.doc.h), o = { r: 0, g: 1, b: 2 }[S.viewChan]; for (let i = 0; i < id.data.length; i += 4) { const v = id.data[i + o]; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; if (id.data[i + 3]) id.data[i + 3] = 255; } x.putImageData(id, 0, 0); CHAN.dirty = false; } vctx.setTransform(DPR, 0, 0, DPR, 0, 0); vctx.drawImage(CHAN.c, S.panX, S.panY, S.doc.w * S.zoom, S.doc.h * S.zoom); drawSelection(); TOOLS_OVERLAY(); }
+  const g = S.doc.guides || []; if (g.length && S.showGuides !== false) { vctx.save(); vctx.setTransform(DPR, 0, 0, DPR, 0, 0); vctx.strokeStyle = '#00d8ff'; vctx.lineWidth = 1; vctx.beginPath(); const W = view.width / DPR, H = view.height / DPR; g.forEach(q => { if (q.o === 'v') { const s = Math.round(q.p * S.zoom + S.panX) + .5; vctx.moveTo(s, 0); vctx.lineTo(s, H); } else { const s = Math.round(q.p * S.zoom + S.panY) + .5; vctx.moveTo(0, s); vctx.lineTo(W, s); } }); vctx.stroke(); vctx.restore(); }
+  if (RD.on) { vctx.save(); vctx.setTransform(DPR, 0, 0, DPR, 0, 0); vctx.strokeStyle = '#00d8ff'; vctx.setLineDash([4, 3]); vctx.beginPath(); if (RD.o === 'v') { vctx.moveTo(RD.s + .5, 0); vctx.lineTo(RD.s + .5, view.height); } else { vctx.moveTo(0, RD.s + .5); vctx.lineTo(view.width, RD.s + .5); } vctx.stroke(); vctx.restore(); }
+  drawRulers();
+  const dt = $('#docTab'); if (dt) dt.textContent = `${S.doc.name} @ ${(S.zoom * 100).toFixed(S.zoom < .1 ? 1 : 0)}% (${S.doc.mode === 'gray' ? 'رمادي' : 'RGB'}/8${HIST.idx > 0 ? '*' : ''})`;
+  if (PANELS.tab === 'nav') { if (was) updNav.dirty = true; updNav(); }
+  if (PANELS.tab === 'hist' && was) { clearTimeout(updHist.t); updHist.t = setTimeout(updHist, 300); }
+})(renderView);
+const RD = { on: false };
+[[RH, 'h'], [RV, 'v']].forEach(([c, o]) => {
+  c.addEventListener('pointerdown', e => { e.preventDefault(); c.setPointerCapture(e.pointerId); RD.on = true; RD.o = o === 'h' ? 'h' : 'v'; RD.s = -99; });
+  c.addEventListener('pointermove', e => { if (!RD.on) return; const r = view.getBoundingClientRect(); RD.s = RD.o === 'h' ? e.clientY - r.top : e.clientX - r.left; requestRender(false); });
+  c.addEventListener('pointerup', e => { if (!RD.on) return; RD.on = false; const p = toDoc(e); const v = Math.round(RD.o === 'h' ? p.y : p.x); if ((RD.o === 'h' ? p.sy : p.sx) > (RD.o === 'h' ? 44 : 18)) { S.doc.guides = S.doc.guides || []; S.doc.guides.push({ o: RD.o, p: v }); scheduleSave(); toast('دليل جديد عند ' + v + ' بكسل — اسحبه بأداة التحريك، أو أعده للمسطرة لحذفه', 2600); } requestRender(false); });
+});
+$('#rulerC').onclick = () => toggleRulers();
+function toggleRulers() { S.rulers = !S.rulers; LS.set('naqsh.rulers', S.rulers ? 'on' : 'off'); fitView(); requestRender(false); }
+
+/* ---------- quick mask & screen mode ---------- */
+const QMASK = {
+  L: null,
+  toggle() {
+    if (!this.L) {
+      const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height); if (S.sel) { x.globalCompositeOperation = 'destination-out'; x.drawImage(S.sel.mask, 0, 0); } else x.clearRect(0, 0, c.width, c.height);
+      const L = newLayerObj('قناع سريع', c); L.opacity = .5; L.fx = FX_DEFAULT(); L.fx.overlay = { on: true, color: '#ff2a2a', opacity: 1 }; L.isQM = true; this.prevActive = S.active; S.layers.push(L); S.active = L.id; this.L = L; S.sel = null; setTool('brush');
+      toast('وضع القناع السريع: ارسم بالفرشاة لاستبعاد مناطق، وبالممحاة لإضافتها للتحديد. اضغط Q للخروج', 4000);
+    } else {
+      const L = this.L, m = mkCanvas(S.doc.w, S.doc.h), x = m.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, m.width, m.height); x.globalCompositeOperation = 'destination-out'; x.drawImage(L.canvas, L.x, L.y);
+      S.layers = S.layers.filter(l => l !== L); this.L = null; S.active = this.prevActive && S.layers.some(l => l.id === this.prevActive) ? this.prevActive : S.layers[S.layers.length - 1]?.id; S.sel = { mask: m, path: null }; finalizeSelection(); toast('تم تحويل القناع السريع إلى تحديد');
+    }
+    requestRender(); PANELS.refresh(); syncToolbar();
+  }
+};
+function screenMode() { const d = document; if (!d.fullscreenElement && d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(() => toast('ملء الشاشة غير متاح هنا')); else if (d.exitFullscreen) d.exitFullscreen().catch(() => { }); }
+
+/* ---------- new filters (distort / render) and auto corrections ---------- */
+function bilinear(src, w, h, x, y, out, k) { x = clamp(x, 0, w - 1); y = clamp(y, 0, h - 1); const x1 = x | 0, y1 = y | 0, x2 = Math.min(w - 1, x1 + 1), y2 = Math.min(h - 1, y1 + 1), fx = x - x1, fy = y - y1; for (let c = 0; c < 4; c++) out[k + c] = src[(y1 * w + x1) * 4 + c] * (1 - fx) * (1 - fy) + src[(y1 * w + x2) * 4 + c] * fx * (1 - fy) + src[(y2 * w + x1) * 4 + c] * (1 - fx) * fy + src[(y2 * w + x2) * 4 + c] * fx * fy; }
+function warpId(id, fn) { const w = id.width, h = id.height, src = new Uint8ClampedArray(id.data), d = id.data, o = { x: 0, y: 0 }; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (fn(x, y, o)) bilinear(src, w, h, o.x, o.y, d, (y * w + x) * 4); } }
+Object.assign(ADJ, {
+  twirl: { n: 'دوامة', g: 'dst', p: [['angle', 'الزاوية', -720, 720, 180], ['r', 'نصف القطر %', 10, 100, 70]], f(id, p) { const w = id.width, h = id.height, cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 * p.r / 100, A = p.angle * Math.PI / 180; warpId(id, (x, y, o) => { const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy); if (d >= R) return false; const t = (1 - d / R), a = A * t * t, c = Math.cos(a), s = Math.sin(a); o.x = cx + dx * c - dy * s; o.y = cy + dx * s + dy * c; return true; }); } },
+  wave: { n: 'موجة', g: 'dst', p: [['amp', 'السعة', 1, 120, 18], ['len', 'الطول الموجي', 10, 600, 120]], f(id, p) { const T = Math.PI * 2 / p.len; warpId(id, (x, y, o) => { o.x = x + p.amp * Math.sin(y * T); o.y = y + p.amp * Math.sin(x * T); return true; }); } },
+  ripple: { n: 'تموج دائري', g: 'dst', p: [['amp', 'السعة', 1, 60, 10], ['len', 'المسافة بين الحلقات', 6, 200, 40]], f(id, p) { const cx = id.width / 2, cy = id.height / 2; warpId(id, (x, y, o) => { const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, k = p.amp * Math.sin(d / p.len * Math.PI * 2) / d; o.x = x + dx * k; o.y = y + dy * k; return true; }); } },
+  spherize: { n: 'كروي / قرص', g: 'dst', p: [['amount', 'المقدار (سالب = قرص)', -100, 100, 60], ['r', 'نصف القطر %', 10, 100, 80]], f(id, p) { const w = id.width, h = id.height, cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 * p.r / 100, a = p.amount / 100; warpId(id, (x, y, o) => { const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy); if (d >= R || !d) return false; const nr = d / R, sr = a >= 0 ? Math.pow(nr, 1 + a * 1.2) : Math.pow(nr, 1 / (1 - a * 1.2)); const f = nr ? sr / nr : 1; o.x = cx + dx * f; o.y = cy + dy * f; return true; }); } },
+  polar: { n: 'إحداثيات قطبية', g: 'dst', p: [], f(id) { const w = id.width, h = id.height, cx = w / 2, cy = h / 2, R = Math.min(cx, cy); warpId(id, (x, y, o) => { const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy), a = (Math.atan2(dy, dx) + Math.PI) / (Math.PI * 2); o.x = a * (w - 1); o.y = Math.min(h - 1, d / R * (h - 1)); return true; }); } },
+  clouds: { n: 'سحب (باللونين الأمامي والخلفي)', g: 'rnd', p: [['scale', 'الحجم', 10, 400, 120], ['seed', 'البذرة', 1, 999, 7]], f(id, p) { const w = id.width, h = id.height, d = id.data, A = rgbToHexSafe(S.fg), B = rgbToHexSafe(S.bg); let s = p.seed * 9301 + 49297; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647; const G = 256, perm = new Float32Array(G * G); for (let i = 0; i < perm.length; i++) perm[i] = rnd(); const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), g = (a, b) => perm[((b & 255) * G) + (a & 255)]; return lerp(lerp(g(xi, yi), g(xi + 1, yi), u), lerp(g(xi, yi + 1), g(xi + 1, yi + 1), u), v); }; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let t = 0, amp = .5, f = 1 / p.scale; for (let o = 0; o < 6; o++) { t += vn(x * f, y * f) * amp; amp *= .5; f *= 2; } t = clamp((t - .15) / .75, 0, 1); const k = (y * w + x) * 4; d[k] = A.r + (B.r - A.r) * t; d[k + 1] = A.g + (B.g - A.g) * t; d[k + 2] = A.b + (B.b - A.b) * t; d[k + 3] = 255; } } },
+  flare: { n: 'توهج العدسة', g: 'rnd', p: [['x', 'الموضع الأفقي %', 0, 100, 30], ['y', 'الموضع العمودي %', 0, 100, 30], ['b', 'السطوع', 10, 300, 120]], f(id, p) { const w = id.width, h = id.height, d = id.data, fx = w * p.x / 100, fy = h * p.y / 100, cx = w / 2, cy = h / 2, R = Math.max(w, h), k0 = p.b / 100; const blobs = [[0, .09, [255, 245, 220], 1.4], [.35, .03, [120, 200, 255], .35], [.6, .05, [255, 160, 90], .3], [1.25, .08, [140, 255, 170], .25], [1.6, .025, [255, 120, 200], .4]]; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const k = (y * w + x) * 4; let r = 0, g = 0, b = 0; const dd = Math.hypot(x - fx, y - fy) / R; const core = Math.exp(-dd * dd / .0008) * 1.4 + Math.exp(-dd / .06) * .5; r += 255 * core; g += 240 * core; b += 210 * core; const ring = Math.exp(-Math.pow((dd - .12) / .006, 2)) * .25; r += 200 * ring; g += 220 * ring; b += 255 * ring; const st = Math.exp(-Math.abs(y - fy) / (h * .004)) * Math.exp(-Math.abs(x - fx) / (w * .35)) * .5; r += 255 * st; g += 230 * st; b += 200 * st; for (const [t, s, c, a] of blobs) { const bx = fx + (cx - fx) * 2 * t, by = fy + (cy - fy) * 2 * t, q = Math.hypot(x - bx, y - by) / R; if (q < s) { const f = a * (1 - q / s) * (q / s > .7 ? (1 - q / s) / .3 : 1); r += c[0] * f; g += c[1] * f; b += c[2] * f; } } d[k] = Math.min(255, d[k] + r * k0); d[k + 1] = Math.min(255, d[k + 1] + g * k0); d[k + 2] = Math.min(255, d[k + 2] + b * k0); } } }
+});
+function rgbToHexSafe(c) { return { r: c.r, g: c.g, b: c.b }; }
+['twirl', 'wave', 'ripple', 'spherize', 'polar', 'clouds', 'flare'].forEach(k => { if (!ADJ_KEYS.includes(k)) ADJ_KEYS.push(k); });
+function autoFix(kind) {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('اختر طبقة صورة'); if (L.type === 'text') rasterize(L);
+  applyToLayer(L, cloneCanvas(L.canvas), cv => { const x = cv.getContext('2d'), id = x.getImageData(0, 0, cv.width, cv.height), d = id.data, Hs = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)]; let n = 0;
+    for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 10) continue; n++; Hs[0][d[i]]++; Hs[1][d[i + 1]]++; Hs[2][d[i + 2]]++; Hs[3][Math.round(lumOf(d[i], d[i + 1], d[i + 2]))]++; }
+    const lim = (H, c) => { let a = 0, lo = 0, hi = 255; for (let i = 0; i < 256; i++) { a += H[i]; if (a > n * c) { lo = i; break; } } a = 0; for (let i = 255; i >= 0; i--) { a += H[i]; if (a > n * c) { hi = i; break; } } return [lo, Math.max(lo + 1, hi)]; };
+    const luts = [0, 1, 2].map(ch => { const [lo, hi] = kind === 'contrast' ? lim(Hs[3], .005) : lim(Hs[ch], .005); const lut = new Uint8ClampedArray(256); for (let v = 0; v < 256; v++) lut[v] = (v - lo) / (hi - lo) * 255; return lut; });
+    if (kind === 'color') { let s = [0, 0, 0], m = 0; for (let i = 0; i < d.length; i += 16) { if (d[i + 3] < 10) continue; const l = lumOf(d[i], d[i + 1], d[i + 2]); if (l < 60 || l > 200) continue; s[0] += luts[0][d[i]]; s[1] += luts[1][d[i + 1]]; s[2] += luts[2][d[i + 2]]; m++; } if (m) { const avg = (s[0] + s[1] + s[2]) / 3 / m; [0, 1, 2].forEach(ch => { const mean = s[ch] / m; const g = Math.log(avg / 255) / Math.log(Math.max(1, mean) / 255); for (let v = 0; v < 256; v++) luts[ch][v] = 255 * Math.pow(luts[ch][v] / 255, clamp(g, .6, 1.6)); }); } }
+    for (let i = 0; i < d.length; i += 4) { d[i] = luts[0][d[i]]; d[i + 1] = luts[1][d[i + 1]]; d[i + 2] = luts[2][d[i + 2]]; } x.putImageData(id, 0, 0); });
+  requestRender(); commit({ tone: 'نغمة تلقائية', contrast: 'تباين تلقائي', color: 'لون تلقائي' }[kind]); appliedFx(null, { tone: 'نغمة تلقائية', contrast: 'تباين تلقائي', color: 'لون تلقائي' }[kind]);
+}
+
+/* ---------- selection modify, color range, select subject, stroke, content-aware fill ---------- */
+function modSel(kind, r) {
+  if (!S.sel) return toast('حدد منطقة أولاً'); const m = S.sel.mask, w = m.width, h = m.height, id = m.getContext('2d').getImageData(0, 0, w, h);
+  const bin = t => { for (let i = 3; i < id.data.length; i += 4) id.data[i] = id.data[i] > t ? 255 : 0; };
+  if (kind === 'expand') { FILTERS.blurImageData(id, r * .9); bin(8); }
+  else if (kind === 'contract') { FILTERS.blurImageData(id, r * .9); bin(247); }
+  else if (kind === 'smooth') { FILTERS.blurImageData(id, r); bin(127); }
+  else if (kind === 'border') { const a = new ImageData(new Uint8ClampedArray(id.data), w, h), b = new ImageData(new Uint8ClampedArray(id.data), w, h); FILTERS.blurImageData(a, r * .45); FILTERS.blurImageData(b, r * .45); for (let i = 3; i < id.data.length; i += 4) id.data[i] = (a.data[i] > 8 && b.data[i] <= 247) ? 255 : 0; }
+  for (let i = 0; i < id.data.length; i += 4) { id.data[i] = id.data[i + 1] = id.data[i + 2] = 255; }
+  const c = mkCanvas(w, h); c.getContext('2d').putImageData(id, 0, 0); S.sel = { mask: c, path: null }; finalizeSelection(); toast('تم تعديل التحديد');
+}
+DLG.modSel = function (kind, title) { this.open(title, `<label class="prop">المقدار<input type="range" id="msR" min="1" max="200" value="10"><output>10 بكسل</output></label>`, [btn('موافق', () => { const r = +$('#msR').value; this.close(); modSel(kind, r); }, 'btn primary'), btn('إلغاء', () => this.close())], 'narrow'); $('#msR').oninput = e => e.target.nextElementSibling.textContent = e.target.value + ' بكسل'; };
+DLG.colorRange = function () {
+  const src = sampleSource(true), w = S.doc.w, h = S.doc.h; let col = { ...S.fg };
+  const b = this.open('نطاق الألوان', `<div class="note">اختر اللون المراد تحديده (أو استخدم القطارة على التصميم قبل فتح النافذة) ثم اضبط مدى التشابه.</div><label class="prop">اللون<input type="color" id="crC" value="${rgbToHex(col)}"><span></span></label><label class="prop">التشابه<input type="range" id="crF" min="1" max="200" value="40"><output>40</output></label><canvas id="crP" style="width:100%;max-height:240px;object-fit:contain;background:#000;border-radius:4px"></canvas>`, [btn('تحديد', () => { const m = build(); this.close(); setSelection(m, null, S.opts.select.mode); toast('تم تحديد نطاق اللون'); }, 'btn primary'), btn('إلغاء', () => this.close())]);
+  const pv = $('#crP'), s = Math.min(1, 480 / Math.max(w, h)); pv.width = Math.round(w * s); pv.height = Math.round(h * s);
+  const build = () => { const f = +$('#crF').value, c = hexToRgb($('#crC').value), d = src.data, arr = new Uint8Array(w * h); for (let i = 0; i < arr.length; i++) { const k = i * 4; if (d[k + 3] < 10) continue; const dist = Math.hypot(d[k] - c.r, d[k + 1] - c.g, d[k + 2] - c.b); arr[i] = clamp(255 * (1 - (dist - f * .5) / (f * .8 + 1)), 0, 255); } return maskFromArray(arr); };
+  const prev = () => { const m = build(), x = pv.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, pv.width, pv.height); x.drawImage(m, 0, 0, pv.width, pv.height); };
+  $('#crF').oninput = e => { e.target.nextElementSibling.textContent = e.target.value; clearTimeout(prev.t); prev.t = setTimeout(prev, 60); }; $('#crC').oninput = () => { clearTimeout(prev.t); prev.t = setTimeout(prev, 60); }; prev();
+};
+function selectSubject() {
+  const src = sampleSource(true), w = S.doc.w, h = S.doc.h, d = src.data; const marks = new Uint8Array(w * h);
+  const seeds = []; for (let i = 0; i <= 8; i++) { seeds.push([Math.round((w - 1) * i / 8), 0], [Math.round((w - 1) * i / 8), h - 1], [0, Math.round((h - 1) * i / 8)], [w - 1, Math.round((h - 1) * i / 8)]); }
+  seeds.forEach(([x, y]) => { if (marks[y * w + x]) return; const m = floodMask(d, w, h, x, y, 22, true); let cnt = 0; for (let i = 0; i < m.length; i++) if (m[i]) cnt++; if (cnt > w * h * .85) return; for (let i = 0; i < m.length; i++) if (m[i]) marks[i] = 1; });
+  const arr = new Uint8Array(w * h); let n = 0; for (let i = 0; i < arr.length; i++) if (!marks[i] && d[i * 4 + 3] > 10) { arr[i] = 255; n++; }
+  if (n < w * h * .01 || n > w * h * .97) return toast('تعذر تمييز الموضوع تلقائياً — جرّب أداة التحديد السريع (W)');
+  setSelection(maskFromArray(arr), null, 'new'); modSel('smooth', 3); toast('تم تحديد الموضوع (تقريبي) — حسّنه بالتحديد السريع أو القناع السريع (Q)', 3200);
+}
+DLG.stroke = function () {
+  const o = { w: 6, pos: 'center' };
+  this.open('حدّ (Stroke)', `<label class="prop">العرض<input type="range" id="stW" min="1" max="120" value="6"><output>6 بكسل</output></label><label class="prop">اللون<input type="color" id="stC" value="${rgbToHex(S.fg)}"><span></span></label><label class="prop">الموضع<select id="stP"><option value="inside">داخل</option><option value="center" selected>المنتصف</option><option value="outside">خارج</option></select><span></span></label><div class="note">${S.sel ? 'سيُرسم الحد حول التحديد على الطبقة الحالية.' : 'لا يوجد تحديد — سيُرسم الحد حول محتوى الطبقة الحالية.'}</div>`,
+    [btn('موافق', () => { const w = +$('#stW').value, c = $('#stC').value, pos = $('#stP').value; this.close(); doStroke(w, c, pos); }, 'btn primary'), btn('إلغاء', () => this.close())], 'narrow');
+  $('#stW').oninput = e => e.target.nextElementSibling.textContent = e.target.value + ' بكسل';
+};
+function doStroke(w, color, pos) {
+  const L = editableLayer(); if (!L) return; let base;
+  if (S.sel) base = S.sel.mask; else { base = mkCanvas(S.doc.w, S.doc.h); const x = base.getContext('2d'); x.drawImage(L.canvas, L.x, L.y); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#fff'; x.fillRect(0, 0, base.width, base.height); }
+  const grow = (r, t) => { const id = base.getContext('2d').getImageData(0, 0, base.width, base.height); if (r > 0) FILTERS.blurImageData(id, r * .9); const a = new Uint8Array(id.width * id.height); for (let i = 0; i < a.length; i++) a[i] = id.data[i * 4 + 3] > t ? 255 : 0; return a; };
+  const outer = pos === 'inside' ? grow(0, 127) : grow(pos === 'outside' ? w : w / 2, 8), inner = pos === 'outside' ? grow(0, 127) : grow(pos === 'inside' ? w : w / 2, 247);
+  const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'), id = x.createImageData(c.width, c.height), col = hexToRgb(color);
+  for (let i = 0; i < outer.length; i++) if (outer[i] && !inner[i]) { const k = i * 4; id.data[k] = col.r; id.data[k + 1] = col.g; id.data[k + 2] = col.b; id.data[k + 3] = 255; }
+  x.putImageData(id, 0, 0); const keep = S.sel; S.sel = null; applyBufferToLayer(c, 1, 'حدّ'); S.sel = keep; requestRender();
+}
+function contentAwareFill() { if (!S.sel) return toast('حدد المنطقة المراد إزالتها أولاً (مثلاً باللاسو)'); const L = editableLayer(); if (!L) return; toast('جارٍ التعبئة حسب المحتوى…', 1200); setTimeout(() => { if (inpaint(L, S.sel.mask)) { requestRender(); commit('تعبئة حسب المحتوى'); appliedFx(null, 'تعبئة حسب المحتوى'); } }, 30); }
+
+/* ---------- menus (Photoshop menu bar) ---------- */
+const MENU_FN = {
+  solid() { const c = mkCanvas(S.doc.w, S.doc.h), x = c.getContext('2d'); x.fillStyle = rgba(S.fg, 1); x.fillRect(0, 0, c.width, c.height); addLayer(newLayerObj('تعبئة لونية', c)); requestRender(); commit('طبقة تعبئة'); },
+  gradient() { const c = mkCanvas(S.doc.w, S.doc.h); TOOLS.drawGradient(c.getContext('2d'), { x: 0, y: 0 }, { x: S.doc.w, y: S.doc.h }); addLayer(newLayerObj('تدرج', c)); requestRender(); commit('طبقة تدرج'); },
+  vtext() { const L = newTextLayer('ن\nص', S.doc.w / 2, S.doc.h / 2); addLayer(L); requestRender(); commit('نص عمودي'); UI.openTextEditor(L, true); toast('نص عمودي: اكتب كل حرف في سطر'); },
+  htext() { const L = newTextLayer('نص جديد', S.doc.w / 2, S.doc.h / 2); addLayer(L); requestRender(); commit('نص جديد'); UI.openTextEditor(L, true); }
+};
+(() => {
+  const M = n => MENUS.find(m => m[0] === n)[1];
+  const ins = (menu, afterLabel, items) => { const arr = M(menu); const i = afterLabel ? arr.findIndex(it => Array.isArray(it) && it[0] === afterLabel) : arr.length - 1; arr.splice(i + 1, 0, ...items); };
+  ins('تحرير', 'مسح داخل التحديد', [['تعبئة حسب المحتوى (إزالة عناصر)', 'Shift+⌫', contentAwareFill], ['حدّ (Stroke)…', '', () => DLG.stroke()]]);
+  M('صورة').splice(1, 0, ['نغمة تلقائية', 'Shift+Ctrl+L', () => autoFix('tone')], ['تباين تلقائي', 'Alt+Shift+Ctrl+L', () => autoFix('contrast')], ['لون تلقائي', 'Shift+Ctrl+B', () => autoFix('color')], '-');
+  M('صورة').push('-', ['الوضع: تدرج رمادي (طبقة تعديل)', '', () => { addAdjLayer('gray', true); S.doc.mode = 'gray'; requestRender(); }], ['الوضع: RGB', '', () => { S.doc.mode = 'rgb'; requestRender(false); }]);
+  ins('طبقة', 'طبقة تدرج لوني', [['grp', 'طبقة تعديل جديدة'], ...ADJ_KEYS.filter(k => ADJ[k].g === 'adj').slice(0, 30).map(k => ['  ' + ADJ[k].n + '…', '', () => addAdjLayer(k)]), '-', ['grp', 'قناع الطبقة'], ['إظهار الكل', '', () => addMask(false)], ['إخفاء الكل', '', () => addMask(true)], ['إظهار التحديد', '', () => addMask(false)], ['تعطيل/تمكين القناع', '', () => maskOp('off')], ['عكس القناع', '', () => maskOp('inv')], ['تطبيق القناع', '', () => maskOp('apply')], ['حذف القناع', '', () => maskOp('del')], '-', ['ربط بالطبقة السفلى / فك الربط', '', linkToggle]]);
+  ins('تحديد', 'تحديد محتوى الطبقة', ['-', ['تحديد الموضوع', '', selectSubject], ['نطاق الألوان…', '', () => DLG.colorRange()], '-', ['grp', 'تعديل'], ['توسيع…', '', () => DLG.modSel('expand', 'توسيع التحديد')], ['تقليص…', '', () => DLG.modSel('contract', 'تقليص التحديد')], ['حدود…', '', () => DLG.modSel('border', 'حدود التحديد')], ['تنعيم…', '', () => DLG.modSel('smooth', 'تنعيم التحديد')], '-', ['التحرير في وضع القناع السريع', 'Q', () => QMASK.toggle()], ['حفظ التحديد كقناة', '', () => { PANELS.lp = 'channels'; PANELS.refresh(); $('#chSave') && $('#chSave').click(); }]]);
+  M('فلتر').unshift(['grp', 'تشويه'], ...['twirl', 'wave', 'ripple', 'spherize', 'polar'].map(k => [ADJ[k].n + '…', '', () => DLG.adjust(k)]), ['تسييل (أداة الدفع)', 'Shift+Ctrl+X', () => { TGCUR[13] = 'liquify'; pickTool('liquify'); }], '-', ['grp', 'إخراج'], ...['clouds', 'flare'].map(k => [ADJ[k].n + '…', '', () => DLG.adjust(k)]), '-', ['grp', 'تمويه وتحسين وأسلوب']);
+  ins('عرض', 'خطوط الأثلاث', ['-', ['المساطر', 'Ctrl+R', toggleRulers], ['إظهار/إخفاء الأدلة', 'Ctrl+;', () => { S.showGuides = S.showGuides === false; requestRender(false); }], ['دليل جديد في المنتصف', '', () => { S.doc.guides = S.doc.guides || []; S.doc.guides.push({ o: 'v', p: Math.round(S.doc.w / 2) }, { o: 'h', p: Math.round(S.doc.h / 2) }); requestRender(false); scheduleSave(); }], ['مسح الأدلة', '', () => { S.doc.guides = []; requestRender(false); scheduleSave(); }], '-', ['وضع ملء الشاشة', 'F', screenMode]]);
+  const help = MENUS.findIndex(m => m[0] === 'مساعدة');
+  MENUS.splice(help, 0,
+    ['كتابة', [['طبقة نص أفقي جديدة', 'T', MENU_FN.htext], ['طبقة نص عمودي جديدة', '', MENU_FN.vtext], '-', ['تحرير النص المحدد', '', () => { const L = activeLayer(); if (L && L.type === 'text') UI.openTextEditor(L); else toast('اختر طبقة نص'); }], ['خصائص النص (الخط، الحجم، اللون)', '', () => openPanel('props')], ['قوالب النصوص الجاهزة', '', () => openPanel('props')], '-', ['تحويل النص إلى صورة', '', () => { const L = activeLayer(); if (L && L.type === 'text') { rasterize(L); requestRender(); commit('تحويل إلى صورة'); } }]]],
+    ['نافذة', [['grp', 'اللوحات'], ...DOCK.filter(d => d !== '-').map(([k, , n]) => [n, '', () => { if (k[0] === '@') { PANELS.lp = k.slice(1); PANELS.refresh(); } else openPanel(k); }]), '-', ['المساطر', 'Ctrl+R', toggleRulers], ['خطوات البداية', '', () => { $('#steps').hidden = false; LS.set('naqsh.steps', 'on'); }], ['إعادة ضبط مساحة العمل', '', () => { PANELS.lp = 'layers'; PANELS.show('edit'); S.rulers = true; LS.set('naqsh.rulers', 'on'); fitView(); toast('تمت إعادة ضبط مساحة العمل'); }]]]);
+})();
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
+  const k = e.key.toLowerCase(), c = e.ctrlKey || e.metaKey;
+  if ($('#ws-design').hidden) return;
+  if (c && k === 'r') { e.preventDefault(); e.stopImmediatePropagation(); toggleRulers(); }
+  else if (c && k === ';') { e.preventDefault(); S.showGuides = S.showGuides === false; requestRender(false); }
+  else if (c && e.shiftKey && k === 'l') { e.preventDefault(); e.stopImmediatePropagation(); autoFix(e.altKey ? 'contrast' : 'tone'); }
+  else if (c && e.shiftKey && k === 'b') { e.preventDefault(); e.stopImmediatePropagation(); autoFix('color'); }
+  else if (c && e.shiftKey && k === 'x') { e.preventDefault(); e.stopImmediatePropagation(); pickTool('liquify'); }
+  else if (!c && e.shiftKey && (e.key === 'Backspace' || e.key === 'Delete') && S.sel) { e.preventDefault(); e.stopImmediatePropagation(); contentAwareFill(); }
+  else if (c && ['2', '3', '4', '5'].includes(k) && !e.shiftKey) { e.preventDefault(); e.stopImmediatePropagation(); S.viewChan = { 2: null, 3: 'r', 4: 'g', 5: 'b' }[k]; CHAN.dirty = true; requestRender(false); if (PANELS.lp === 'channels') PANELS.refresh(); }
+}, true);
+
+/* ---------- New Document dialog (Photoshop style) ---------- */
+const ND_CATS = [['recent', 'حديث'], ['social', 'سوشيال ميديا'], ['photo', 'صور'], ['print', 'طباعة'], ['art', 'فن ورسم توضيحي'], ['web', 'ويب'], ['mobile', 'جوال'], ['film', 'أفلام وفيديو']];
+const ND_PRE = {
+  social: [['منشور إنستغرام', 1080, 1080, 72], ['منشور عمودي 4:5', 1080, 1350, 72], ['ستوري / ريلز / تيك توك', 1080, 1920, 72], ['صورة مصغرة يوتيوب', 1280, 720, 72], ['غلاف فيسبوك', 1640, 624, 72], ['منشور فيسبوك', 1200, 630, 72], ['غلاف X (تويتر)', 1500, 500, 72], ['غلاف لينكدإن', 1584, 396, 72], ['دبوس بينترست', 1000, 1500, 72], ['حالة واتساب', 1080, 1920, 72]],
+  photo: [['أفقي 4×6', 1800, 1200, 300], ['عمودي 4×6', 1200, 1800, 300], ['أفقي 5×7', 2100, 1500, 300], ['أفقي 8×10', 3000, 2400, 300], ['مربع 2000', 2000, 2000, 300], ['صورة شخصية 3×4', 900, 1200, 300]],
+  print: [['A4', 2480, 3508, 300], ['A5', 1748, 2480, 300], ['A3', 3508, 4961, 300], ['Letter', 2550, 3300, 300], ['بطاقة أعمال', 1050, 600, 300], ['فلاير DL', 1240, 2551, 300], ['بوستر 18×24 (150ppi)', 2700, 3600, 150], ['بطاقة دعوة 5×7', 1500, 2100, 300]],
+  art: [['مخصص', 1080, 1080, 300], ['لوحة رسم 2000', 2000, 2000, 300], ['رسم أفقي', 3000, 2000, 300], ['قصة مصورة', 2480, 3508, 300], ['خلفية شاشة 4K', 3840, 2160, 72]],
+  web: [['ويب شائع', 1366, 768, 72], ['ويب كبير', 1920, 1080, 72], ['ويب متوسط', 1440, 900, 72], ['شاشة صغيرة', 1280, 800, 72], ['بانر إعلاني', 1200, 628, 72], ['أيقونة موقع', 512, 512, 72]],
+  mobile: [['iPhone 15 Pro', 1179, 2556, 72], ['iPhone 15 Pro Max', 1290, 2796, 72], ['iPhone 8', 750, 1334, 72], ['أندرويد 1080p', 1080, 1920, 72], ['iPad Pro 12.9', 2048, 2732, 72], ['Apple Watch', 396, 484, 72], ['أيقونة تطبيق', 1024, 1024, 72]],
+  film: [['HDTV 1080p', 1920, 1080, 72], ['HDTV 720p', 1280, 720, 72], ['UHD 4K', 3840, 2160, 72], ['فيديو عمودي 9:16', 1080, 1920, 72], ['سينمائي 2.39:1', 2048, 858, 72], ['مربع للفيديو', 1080, 1080, 72]]
+};
+DLG.newDoc = function () {
+  let rec = []; try { rec = JSON.parse(LS.get('naqsh.recentDocs') || '[]'); } catch { }
+  if (!rec.length) rec = [['مخصص', 1080, 1080, 300], ['منشور إنستغرام', 1080, 1080, 72], ['ستوري / ريلز', 1080, 1920, 72], ['A4', 2480, 3508, 300], ['HDTV 1080p', 1920, 1080, 72]];
+  ND_PRE.recent = rec;
+  const st = { cat: 'recent', name: rec[0][0] === 'مخصص' ? 'بدون عنوان-1' : rec[0][0], w: rec[0][1], h: rec[0][2], res: rec[0][3] || 72, unit: 'px', mode: 'rgb', bg: 'white', custom: '#f5f0e6', sel: 0 };
+  const body = document.createElement('div'); body.className = 'psnd';
+  body.innerHTML = `<div class="psnd-l"><div class="psnd-tabs" id="ndTabs">${ND_CATS.map(([k, n]) => `<button data-c="${k}" class="${k === 'recent' ? 'on' : ''}">${n}</button>`).join('')}</div><div class="psnd-sub" id="ndSub"></div><div class="psnd-grid" id="ndGrid"></div></div>
+    <div class="psnd-r"><h4>تفاصيل الإعداد المسبق</h4><input class="nm" id="ndN" aria-label="اسم المستند">
+      <label>العرض<div class="row"><input type="number" id="ndW" min="1"><select id="ndU"><option value="px">بكسل</option><option value="in">بوصة</option><option value="cm">سنتيمتر</option><option value="mm">مليمتر</option><option value="pt">نقطة</option></select></div></label>
+      <div class="row" style="align-items:flex-end;gap:12px"><label style="flex:1">الارتفاع<input type="number" id="ndH" min="1"></label><label>الاتجاه<div class="orient"><button id="ndPo" title="عمودي" aria-label="عمودي"><i style="width:10px;height:15px"></i></button><button id="ndLa" title="أفقي" aria-label="أفقي"><i style="width:15px;height:10px"></i></button></div></label></div>
+      <label>الدقة<div class="row"><input type="number" id="ndR" min="1" max="1200"><select id="ndRU"><option value="in">بكسل/بوصة</option><option value="cm">بكسل/سم</option></select></div></label>
+      <label>وضع الألوان<div class="row"><select id="ndM" style="flex:1"><option value="rgb">ألوان RGB</option><option value="gray">تدرج رمادي</option></select><select disabled><option>8 بت</option></select></div></label>
+      <label>محتويات الخلفية<div class="row"><select id="ndB" style="flex:1"><option value="white">أبيض</option><option value="black">أسود</option><option value="bgc">لون الخلفية</option><option value="transparent">شفاف</option><option value="custom">مخصص…</option></select><input type="color" class="bgsw" id="ndBC" value="#ffffff" aria-label="لون الخلفية"></div></label>
+      <div class="meta" id="ndMeta"></div></div>`;
+  const b = this.open('مستند جديد', body, [btn('إنشاء', () => create(), 'btn primary'), btn('إغلاق', () => this.close())], 'psnd-dlg');
+  const F = { px: () => 1, in: () => st.res, cm: () => st.res / 2.54, mm: () => st.res / 25.4, pt: () => st.res / 72 };
+  const shown = v => { const f = F[st.unit](); const n = v / f; return st.unit === 'px' ? Math.round(n) : +n.toFixed(2); };
+  const bgHex = () => st.bg === 'white' ? '#ffffff' : st.bg === 'black' ? '#000000' : st.bg === 'bgc' ? rgbToHex(S.bg) : st.bg === 'custom' ? st.custom : 'transparent';
+  const sync = () => {
+    $('#ndN').value = st.name; $('#ndW').value = shown(st.w); $('#ndH').value = shown(st.h); $('#ndU').value = st.unit; $('#ndR').value = st.res; $('#ndM').value = st.mode; $('#ndB').value = st.bg;
+    const bc = $('#ndBC'); const hx = bgHex(); bc.value = hx === 'transparent' ? '#ffffff' : hx; bc.style.background = hx === 'transparent' ? 'repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 0 0/8px 8px' : hx;
+    $('#ndPo').classList.toggle('on', st.h >= st.w); $('#ndLa').classList.toggle('on', st.w > st.h);
+    const mb = st.w * st.h * 4 / 1048576; $('#ndMeta').textContent = `${st.w} × ${st.h} px · ${st.res} ppi · ${mb.toFixed(1)} MB`;
+  };
+  const grid = () => {
+    const list = ND_PRE[st.cat]; $('#ndSub').textContent = st.cat === 'recent' ? 'العناصر الحديثة (' + list.length + ')' : 'المستندات الفارغة المعدة مسبقاً (' + list.length + ')';
+    const g = $('#ndGrid'); g.innerHTML = '';
+    list.forEach(([n, w, h, r], i) => { const c = document.createElement('button'); c.className = 'psnd-card' + (i === st.sel ? ' on' : ''); const s = 54 / Math.max(w, h); c.innerHTML = `<span class="ic"><i style="width:${Math.max(8, w * s)}px;height:${Math.max(8, h * s)}px"></i></span><b>${esc(n)}</b><small>${w} × ${h} px @ ${r} ppi</small>`; c.onclick = () => { st.sel = i; st.name = n === 'مخصص' ? 'بدون عنوان-1' : n; st.w = w; st.h = h; st.res = r || 72; grid(); sync(); }; c.ondblclick = () => create(); g.appendChild(c); });
+  };
+  $$('#ndTabs button').forEach(t => t.onclick = () => { st.cat = t.dataset.c; st.sel = -1; $$('#ndTabs button').forEach(x => x.classList.toggle('on', x === t)); grid(); });
+  $('#ndN').oninput = e => st.name = e.target.value;
+  const rd = (id, k) => { $(id).oninput = e => { const v = +e.target.value; if (!(v > 0)) return; st[k] = clamp(Math.round(v * F[st.unit]()), 1, 10000); st.sel = -1; $$('#ndGrid .psnd-card').forEach(c => c.classList.remove('on')); const mb = st.w * st.h * 4 / 1048576; $('#ndMeta').textContent = `${st.w} × ${st.h} px · ${st.res} ppi · ${mb.toFixed(1)} MB`; $('#ndPo').classList.toggle('on', st.h >= st.w); $('#ndLa').classList.toggle('on', st.w > st.h); }; $(id).onchange = sync; };
+  rd('#ndW', 'w'); rd('#ndH', 'h');
+  $('#ndU').onchange = e => { st.unit = e.target.value; sync(); };
+  $('#ndR').onchange = e => { const v = clamp(+e.target.value || 72, 1, 1200); const r = $('#ndRU').value === 'cm' ? v * 2.54 : v; if (st.unit !== 'px') { const f0 = F[st.unit](); const wu = st.w / f0, hu = st.h / f0; st.res = Math.round(r); st.w = clamp(Math.round(wu * F[st.unit]()), 1, 10000); st.h = clamp(Math.round(hu * F[st.unit]()), 1, 10000); } else st.res = Math.round(r); sync(); };
+  $('#ndRU').onchange = e => { $('#ndR').value = e.target.value === 'cm' ? +(st.res / 2.54).toFixed(2) : st.res; };
+  $('#ndPo').onclick = () => { if (st.w > st.h) { [st.w, st.h] = [st.h, st.w]; sync(); } }; $('#ndLa').onclick = () => { if (st.h > st.w) { [st.w, st.h] = [st.h, st.w]; sync(); } };
+  $('#ndM').onchange = e => st.mode = e.target.value;
+  $('#ndB').onchange = e => { st.bg = e.target.value; if (st.bg === 'custom') $('#ndBC').click(); sync(); };
+  $('#ndBC').oninput = e => { st.bg = 'custom'; st.custom = e.target.value; sync(); };
+  const create = async () => {
+    const w = clamp(st.w, 1, 10000), h = clamp(st.h, 1, 10000); if (w * h > 50e6) return toast('المقاس كبير جداً على المتصفح — اختر أقل من 50 ميغابكسل');
+    const name = (st.name || 'بدون عنوان-1').trim(); this.close();
+    try { await flushSave(); } catch { }
+    if (typeof HOME !== 'undefined') HOME.hide();
+    newDocument(w, h, bgHex(), name); S.doc.res = st.res; S.doc.mode = st.mode; S.doc.guides = [];
+    if (st.mode === 'gray') addAdjLayer('gray', true);
+    try { const r = JSON.parse(LS.get('naqsh.recentDocs') || '[]').filter(x => !(x[1] === w && x[2] === h && x[0] === name)); r.unshift([name, w, h, st.res]); LS.set('naqsh.recentDocs', JSON.stringify(r.slice(0, 12))); } catch { }
+    switchWs('design'); fitView(); requestRender(); PANELS.refresh(); toast(`تم إنشاء «${name}» — ${w} × ${h} بكسل`, 2600);
+  };
+  grid(); sync();
+};
+/* menu items captured the old functions — point them at the upgraded ones */
+MENUS.forEach(([, items]) => items.forEach(it => { if (!Array.isArray(it)) return; if (it[0] === 'دمج للأسفل') it[2] = () => mergeDown(); if (it[0] === 'تكرار الطبقة') it[2] = () => dupLayer(); }));
 /* ============================== VIDEO EDITOR ============================== */
 const VID = (() => {
   const ASPECTS = { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [1080, 1080], '4:5': [864, 1080], '4:3': [1024, 768], '21:9': [1344, 576] };
