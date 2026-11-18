@@ -3229,6 +3229,118 @@ new MutationObserver(() => { $$('select:not([data-fx])').forEach(s => { if (s.op
 FONTX.init();
 /* help, menu and quick access */
 (() => { const t = MENUS.find(m => m[0] === 'كتابة'); if (t) t[1].splice(0, 0, ['مكتبة الخطوط (كل خطوط العالم)…', '', () => { const L = activeLayer(); DLG.fonts(L && L.type === 'text' ? L.text.font : 'Cairo', n => { const A = activeLayer(); if (A && A.type === 'text') { A.text.font = n; renderText(A); requestRender(); commit('خط'); PANELS.refresh(); } else { S.opts.text.font = n; UI.buildOptbar(); toast('سيُستخدم «' + n + '» للنصوص الجديدة'); } }); }], ['رفع خط من جهازي…', '', () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.ttf,.otf,.woff,.woff2'; i.multiple = true; i.onchange = () => FONTX.upload([...i.files]); i.click(); }], '-'); })();
+/* ============================== Extract text (OCR) & extract logo ============================== */
+const OCR = {
+  ver: '5.1.1', worker: null, wlang: null, lib: null,
+  loadLib() {
+    if (window.Tesseract) return Promise.resolve();
+    if (this.lib) return this.lib;
+    this.lib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = `https://cdn.jsdelivr.net/npm/tesseract.js@${this.ver}/dist/tesseract.min.js`; s.onload = res; s.onerror = () => { this.lib = null; rej(new Error('lib')); }; document.head.appendChild(s); });
+    return this.lib;
+  },
+  async getWorker(lang, onProg) {
+    await this.loadLib();
+    if (this.worker && this.wlang === lang) { this.onProg = onProg; return this.worker; }
+    if (this.worker) { try { await this.worker.terminate(); } catch { } this.worker = null; }
+    this.onProg = onProg;
+    const base = { workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${this.ver}/dist/worker.min.js`, corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${this.ver}`, logger: m => this.onProg && this.onProg(m) };
+    try { this.worker = await Tesseract.createWorker(lang.split('+'), 1, { ...base, langPath: 'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0' }); }
+    catch { this.worker = await Tesseract.createWorker(lang.split('+'), 1, base); }
+    this.wlang = lang; return this.worker;
+  },
+  /* the area to read: selection bounds (or whole design), upscaled + grayscale for accuracy */
+  source(fromLayer) {
+    let src; if (fromLayer) { const L = activeLayer(); src = mkCanvas(S.doc.w, S.doc.h); if (L && L.type !== 'adj') drawLayer(src.getContext('2d'), L, 1, 'source-over'); } else { compositeTo(docCtx, S.layers, S.doc.w, S.doc.h); src = docCanvas; }
+    const b = S.sel && S.sel.bounds ? S.sel.bounds : { x: 0, y: 0, w: S.doc.w, h: S.doc.h };
+    const s = clamp(1800 / Math.max(b.w, b.h), 1, 3); const c = mkCanvas(b.w * s, b.h * s), x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.imageSmoothingQuality = 'high'; x.drawImage(src, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
+    if (S.sel) { x.globalCompositeOperation = 'destination-in'; x.drawImage(S.sel.mask, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height); x.globalCompositeOperation = 'destination-over'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'source-over'; }
+    return { canvas: c, b, s };
+  },
+  /* pick the text color inside a box: the color farthest from the box's edge (background) color */
+  textColor(box) {
+    const x0 = Math.max(0, Math.floor(box.x)), y0 = Math.max(0, Math.floor(box.y)), w = Math.min(S.doc.w - x0, Math.ceil(box.w)), h = Math.min(S.doc.h - y0, Math.ceil(box.h)); if (w < 2 || h < 2) return '#000000';
+    const d = docCtx.getImageData(x0, y0, w, h).data; let br = 0, bg = 0, bb = 0, n = 0;
+    for (let i = 0; i < w; i++) for (const j of [0, h - 1]) { const k = (j * w + i) * 4; br += d[k]; bg += d[k + 1]; bb += d[k + 2]; n++; }
+    br /= n; bg /= n; bb /= n; let best = 0, col = [0, 0, 0];
+    for (let k = 0; k < d.length; k += 8) { const dist = (d[k] - br) ** 2 + (d[k + 1] - bg) ** 2 + (d[k + 2] - bb) ** 2; if (dist > best) { best = dist; col = [d[k], d[k + 1], d[k + 2]]; } }
+    return rgbToHex({ r: col[0], g: col[1], b: col[2] });
+  }
+};
+DLG.ocr = function () {
+  const hasSel = !!S.sel;
+  const body = `<div class="note">${hasSel ? 'سيُقرأ النص من <b>المنطقة المحددة</b> فقط.' : 'سيُقرأ النص من التصميم كاملاً. لقراءة جزء معين حدده أولاً بأداة التحديد ثم افتح هذه النافذة.'}</div>
+    <label class="prop">اللغة<select id="ocL"><option value="ara+eng">عربي + إنجليزي</option><option value="ara">عربي فقط</option><option value="eng">إنجليزي فقط</option></select><span></span></label>
+    <label class="prop">المصدر<select id="ocS"><option value="all">كل الطبقات الظاهرة</option><option value="layer">الطبقة الحالية فقط</option></select><span></span></label>
+    <div id="ocP" class="note" hidden><div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:6px"><i id="ocB" style="display:block;height:100%;width:0;background:var(--accent);transition:width .2s"></i></div><span id="ocT">جارٍ التحضير…</span></div>
+    <textarea id="ocR" dir="auto" placeholder="سيظهر النص المستخرج هنا ويمكنك تعديله قبل النسخ" style="min-height:160px;background:var(--ground);border:1px solid var(--line-2);border-radius:4px;padding:8px;color:var(--fg);font-size:15px;line-height:1.7;resize:vertical"></textarea>
+    <div class="icon-row" id="ocA" hidden><button class="btn sm" id="ocCopy">📋 نسخ النص</button><button class="btn sm" id="ocLayers">🅣 تحويل إلى طبقات نص قابلة للتعديل</button><button class="btn sm" id="ocReplace">✏ استبدال النص الأصلي (مسحه وكتابته كطبقات)</button><button class="btn sm" id="ocSave">💾 حفظ كملف نصي</button></div>
+    <div class="note">أول مرة يحتاج إنترنت لتحميل ملفات القراءة (قد يستغرق دقيقة)، بعدها يصير أسرع. الدقة أفضل مع النص المطبوع الواضح.</div>`;
+  let lines = [];
+  this.open('استخراج النص من الصورة', body, [btn('🔍 استخراج النص', () => run(), 'btn primary'), btn('إغلاق', () => this.close())]);
+  const prog = (p, t) => { $('#ocP').hidden = false; $('#ocB').style.width = Math.round(p * 100) + '%'; $('#ocT').textContent = t; };
+  const STAT = { 'loading tesseract core': 'تحميل محرك القراءة', 'initializing tesseract': 'تهيئة المحرك', 'loading language traineddata': 'تحميل ملف اللغة', 'initializing api': 'تجهيز', 'recognizing text': 'قراءة النص' };
+  const run = async () => {
+    const lang = $('#ocL').value, src = OCR.source($('#ocS').value === 'layer');
+    prog(.02, 'جارٍ تحميل أداة القراءة…');
+    try {
+      const w = await OCR.getWorker(lang, m => { if ($('#ocB')) prog(m.progress || 0, (STAT[m.status] || m.status) + '… ' + Math.round((m.progress || 0) * 100) + '%'); });
+      prog(.05, 'قراءة النص…');
+      const { data } = await w.recognize(src.canvas);
+      lines = (data.lines || []).filter(l => l.text.trim() && l.confidence > 25).map(l => ({ text: l.text.trim(), conf: l.confidence, box: { x: src.b.x + l.bbox.x0 / src.s, y: src.b.y + l.bbox.y0 / src.s, w: (l.bbox.x1 - l.bbox.x0) / src.s, h: (l.bbox.y1 - l.bbox.y0) / src.s } }));
+      const txt = lines.length ? lines.map(l => l.text).join('\n') : (data.text || '').trim();
+      if (!$('#ocR')) return; $('#ocR').value = txt; $('#ocA').hidden = !txt;
+      prog(1, txt ? `✓ تم استخراج ${lines.length || 1} سطر (الدقة ${Math.round(data.confidence || 0)}%)` : 'لم يتم العثور على نص واضح — جرّب تحديد منطقة النص فقط أو تغيير اللغة');
+    } catch (e) { prog(0, 'تعذر تحميل أداة القراءة — تأكد من اتصال الإنترنت ثم حاول مرة أخرى'); }
+  };
+  const toLayers = erase => {
+    if (!lines.length) return toast('لا توجد أسطر بمواقع محددة — انسخ النص بدلاً من ذلك');
+    const edited = $('#ocR').value.split('\n'); compositeTo(docCtx, S.layers, S.doc.w, S.doc.h);
+    const cols = lines.map(l => OCR.textColor(l.box));
+    if (erase) { const L = photoLayer(); if (L && L.type !== 'adj') { const m = mkCanvas(S.doc.w, S.doc.h), x = m.getContext('2d'); x.fillStyle = '#fff'; lines.forEach(l => { const p = Math.max(3, l.box.h * .18); x.fillRect(l.box.x - p, l.box.y - p, l.box.w + p * 2, l.box.h + p * 2); }); const keep = S.active; S.active = L.id; if (L.type === 'text') rasterize(L); ensureCovers(L); inpaint(L, m); S.active = keep; } }
+    lines.forEach((l, i) => {
+      const val = (edited[i] != null && edited[i].trim()) ? edited[i] : l.text; const ar = /[؀-ۿ]/.test(val);
+      const T = newTextLayer(val, l.box.x + l.box.w / 2, l.box.y + l.box.h / 2, { font: ar ? 'Cairo' : 'Roboto', size: Math.max(8, Math.round(l.box.h * 1.05)), weight: '700', color: cols[i], align: 'center' });
+      addLayer(T); renderText(T);
+      if (T.canvas.width > l.box.w * 1.15 && T.canvas.width > 4) { T.text.size = Math.max(6, Math.round(T.text.size * l.box.w / T.canvas.width)); renderText(T); setTextCenter(T, l.box.x + l.box.w / 2, l.box.y + l.box.h / 2); }
+    });
+    deselect(); requestRender(); commit(erase ? 'استبدال النص الأصلي' : 'نص مستخرج'); this.close(); openPanel('layers');
+    toast(erase ? 'تم مسح النص الأصلي ووضعه كطبقات نص — اضغط مرتين على أي نص لتعديله' : `تمت إضافة ${lines.length} طبقة نص — عدّل الخط واللون من الخصائص`, 3600);
+  };
+  $('#ocCopy').onclick = async () => { const t = $('#ocR').value; try { await navigator.clipboard.writeText(t); toast('تم نسخ النص'); } catch { $('#ocR').select(); document.execCommand('copy'); toast('تم نسخ النص'); } };
+  $('#ocLayers').onclick = () => toLayers(false);
+  $('#ocReplace').onclick = () => toLayers(true);
+  $('#ocSave').onclick = () => saveFile((S.doc.name || 'نص') + '.txt', new Blob([$('#ocR').value], { type: 'text/plain;charset=utf-8' }));
+};
+
+/* extract logo / object: selection (or auto subject) → its own transparent layer → optional PNG download */
+function extractLogo(download) {
+  if (!S.layers.some(l => l.type !== 'adj' && l.visible)) return toast('افتح صورة أولاً');
+  if (!S.sel) { selectSubject(); if (!S.sel) return; }
+  compositeTo(docCtx, S.layers, S.doc.w, S.doc.h); const c = mkCanvas(S.doc.w, S.doc.h), cx = c.getContext('2d'); cx.drawImage(docCanvas, 0, 0); cx.globalCompositeOperation = 'destination-in'; cx.drawImage(S.sel.mask, 0, 0);
+  const b = contentBounds(c); if (!b) return toast('لا يوجد محتوى داخل التحديد');
+  const k = mkCanvas(b.w, b.h); k.getContext('2d').drawImage(c, -b.x, -b.y);
+  addLayer(newLayerObj('لوجو مستخرج', k, b.x, b.y)); deselect(); requestRender(); commit('استخراج لوجو');
+  if (download) canvasToBlob(k).then(bl => saveFile((S.doc.name || 'logo') + '-لوجو.png', bl));
+  toast('تم استخراج اللوجو في طبقة منفصلة بخلفية شفافة' + (download ? ' وتنزيله PNG' : ' — يمكنك تنزيله من «استخراج اللوجو وتنزيله»'), 3600);
+}
+DLG.logo = function () {
+  this.open('استخراج اللوجو أو أي عنصر', `<div class="note">${S.sel ? 'سيُستخرج ما بداخل <b>التحديد الحالي</b>.' : 'لا يوجد تحديد — سيتم تحديد العنصر الرئيسي تلقائياً. لنتيجة أدق: حدد اللوجو أولاً بأداة «التحديد السريع» (W) أو «العصا السحرية»، ثم افتح هذه النافذة.'}</div>
+    <div class="icon-row"><button class="btn sm" id="lgQuick">تحديد اللوجو بالتحديد السريع</button><button class="btn sm" id="lgWand">العصا السحرية (للخلفيات السادة)</button><button class="btn sm" id="lgBg">إزالة الخلفية السادة من الطبقة</button></div>`,
+    [btn('استخراج وتنزيل PNG', () => { this.close(); extractLogo(true); }, 'btn primary'), btn('استخراج كطبقة فقط', () => { this.close(); extractLogo(false); }), btn('إلغاء', () => this.close())]);
+  $('#lgQuick').onclick = () => { this.close(); pickTool('quick'); toast('امسح فوق اللوجو ثم افتح «استخراج اللوجو» من قائمة صورة', 3600); };
+  $('#lgWand').onclick = () => { this.close(); pickTool('wand'); toast('انقر على الخلفية ثم: تحديد ← عكس التحديد، ثم «استخراج اللوجو»', 4000); };
+  $('#lgBg').onclick = () => { this.close(); const L = photoLayer(); if (L) { removeBg(L); appliedFx(null, 'إزالة الخلفية'); } };
+};
+(() => {
+  const M = n => (MENUS.find(m => m[0] === n) || [, []])[1];
+  M('صورة').splice(0, 0, ['📝 استخراج النص من الصورة (OCR)…', 'Ctrl+Shift+T', () => DLG.ocr()], ['🖼 استخراج اللوجو / عنصر…', '', () => DLG.logo()], '-');
+  M('كتابة').splice(0, 0, ['📝 استخراج النص من صورة…', '', () => DLG.ocr()]);
+  M('تحديد').push('-', ['استخراج المحدد كلوجو PNG', '', () => extractLogo(true)]);
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't' && !$('#ws-design').hidden) { e.preventDefault(); e.stopImmediatePropagation(); DLG.ocr(); } }, true);
+  /* quick buttons in the photo edit tab */
+  PANELS.edit = (orig => function (b) { orig.call(this, b); const row = $('#edS') && $('#edS').previousElementSibling; if (row && row.classList.contains('icon-row') && !$('#edOcr')) { const a = btn('📝 استخراج النص', () => DLG.ocr()); a.id = 'edOcr'; const c = btn('🖼 استخراج اللوجو', () => DLG.logo()); row.append(a, c); } })(PANELS.edit);
+})();
 /* ============================== VIDEO EDITOR ============================== */
 const VID = (() => {
   const ASPECTS = { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [1080, 1080], '4:5': [864, 1080], '4:3': [1024, 768], '21:9': [1344, 576] };
