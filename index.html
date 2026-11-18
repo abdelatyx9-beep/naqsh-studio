@@ -588,6 +588,8 @@ body{padding:0!important}
   .psnd-grid{grid-template-columns:repeat(2,1fr);max-height:34vh}
   .psnd-card{padding:8px}.psnd-card .ic{height:44px}.psnd-card .ic i{transform:scale(.72)}
 }
+/* bottom bar fits 7 buttons */
+.mbar button{flex:1 1 0;min-width:0;font-size:10.5px;padding-inline:2px}
 /* font library */
 .dlg.fb-dlg{width:min(980px,100%);height:min(760px,calc(100vh - 40px))}
 .dlg.fb-dlg .body{padding:0;gap:0;flex:1;min-height:0;overflow:hidden}
@@ -1195,7 +1197,7 @@ function retouchDab(x, y, size) {
   const x0 = Math.max(0, lx), y0 = Math.max(0, ly), x1 = Math.min(L.canvas.width, lx + s), y1 = Math.min(L.canvas.height, ly + s); if (x1 <= x0 || y1 <= y0) return;
   const ctx = L.canvas.getContext('2d'); const id = ctx.getImageData(x0, y0, x1 - x0, y1 - y0); const d = id.data, w = x1 - x0, h = y1 - y0;
   const mode = P.o.mode, st = P.o.strength; let blurred = null;
-  if (mode === 'blur' || mode === 'sharpen') { blurred = new ImageData(new Uint8ClampedArray(d), w, h); FILTERS.blurImageData(blurred, Math.max(1, size / 14)); }
+  if (mode === 'blur' || mode === 'sharpen' || mode === 'smooth') { blurred = new ImageData(new Uint8ClampedArray(d), w, h); FILTERS.blurImageData(blurred, Math.max(1, size / 14)); }
   let mask = null; if (S.sel) mask = S.sel.mask.getContext('2d').getImageData(x0 + L.x, y0 + L.y, w, h).data;
   const cx = x - L.x - x0, cy = y - L.y - y0, R = size / 2;
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
@@ -1204,6 +1206,10 @@ function retouchDab(x, y, size) {
     else if (mode === 'sharpen') { for (let c = 0; c < 3; c++) d[k + c] = d[k + c] + (d[k + c] - blurred.data[k + c]) * f * 2; }
     else if (mode === 'dodge') { for (let c = 0; c < 3; c++) d[k + c] = d[k + c] + (255 - d[k + c]) * f * .35; }
     else if (mode === 'burn') { for (let c = 0; c < 3; c++) d[k + c] = d[k + c] * (1 - f * .35); }
+    else if (mode === 'smooth') { const df = Math.abs(d[k] - blurred.data[k]) + Math.abs(d[k + 1] - blurred.data[k + 1]) + Math.abs(d[k + 2] - blurred.data[k + 2]); const g = Math.min(1, f * 2) * Math.max(0, 1 - df / 90); for (let c = 0; c < 3; c++) d[k + c] = lerp(d[k + c], blurred.data[k + c], g); }
+    else if (mode === 'whiten') { const av = (d[k] + d[k + 1] + d[k + 2]) / 3, t = Math.min(255, av * 1.12 + 10); for (let c = 0; c < 3; c++) d[k + c] = lerp(d[k + c], t, Math.min(1, f * 1.4)); }
+    else if (mode === 'brighteye') { for (let c = 0; c < 3; c++) { const v = d[k + c]; d[k + c] = lerp(v, Math.min(255, (v - 128) * 1.25 + 128 + 22), Math.min(1, f * 1.2)); } }
+    else if (mode === 'colorize') { const l = (d[k] * .299 + d[k + 1] * .587 + d[k + 2] * .114) / 255, cl = S.fg, cm = (cl.r * .299 + cl.g * .587 + cl.b * .114) / 255 || .01; const tg = [cl.r, cl.g, cl.b].map(v => clamp(v * l / cm, 0, 255)); for (let c = 0; c < 3; c++) d[k + c] = lerp(d[k + c], tg[c], Math.min(1, f * 1.1) * .75); }
     else if (mode === 'sponge' || mode === 'saturate') { const avg = (d[k] + d[k + 1] + d[k + 2]) / 3, s = mode === 'sponge' ? -f * .6 : f * .6; for (let c = 0; c < 3; c++) d[k + c] = d[k + c] + (d[k + c] - avg) * s; }
   }
   ctx.putImageData(id, x0, y0); touch(L);
@@ -1558,7 +1564,7 @@ UI.buildOptbar = function () {
     case 'pencil': add(ctlRange('الحجم', o, 'size', 1, 100, 1, px), ctlRange('الشفافية', o, 'opacity', .01, 1, .01, pct)); break;
     case 'eraser': add(ctlRange('الحجم', o, 'size', 1, 500, 1, px), ctlRange('الصلابة', o, 'hardness', 0, 1, .01, pct), ctlRange('الشفافية', o, 'opacity', .01, 1, .01, pct)); break;
     case 'clone': { add(ctlRange('الحجم', o, 'size', 1, 400, 1, px), ctlRange('الصلابة', o, 'hardness', 0, 1, .01, pct), ctlRange('الشفافية', o, 'opacity', .01, 1, .01, pct)); const s = document.createElement('span'); s.className = 'ctl'; s.textContent = 'Alt + نقر (أو ضغطة مطولة باللمس) لتحديد المصدر'; add(s, btn('إعادة ضبط المصدر', () => { S.cloneSrc = null; P.cloneOff = null; })); break; }
-    case 'retouch': add(ctlSeg(o, 'mode', [['blur', 'تمويه'], ['sharpen', 'حدة'], ['dodge', 'تفتيح'], ['burn', 'تغميق'], ['sponge', 'إزالة التشبع'], ['saturate', 'زيادة التشبع']]), ctlRange('الحجم', o, 'size', 4, 400, 1, px), ctlRange('القوة', o, 'strength', .05, 1, .01, pct)); break;
+    case 'retouch': add(ctlSeg(o, 'mode', [['blur', 'تمويه'], ['sharpen', 'حدة'], ['dodge', 'تفتيح'], ['burn', 'تغميق'], ['sponge', 'إزالة التشبع'], ['saturate', 'زيادة التشبع'], ['smooth', 'تنعيم البشرة'], ['whiten', 'تبييض الأسنان'], ['brighteye', 'إشراق العين'], ['colorize', 'تلوين (شفايف/شعر)']]), ctlRange('الحجم', o, 'size', 4, 400, 1, px), ctlRange('القوة', o, 'strength', .05, 1, .01, pct)); break;
     case 'fill': add(ctlRange('التفاوت', o, 'tolerance', 0, 100), ctlCheck('متجاور', o, 'contiguous'), ctlCheck('عيّنة من كل الطبقات', o, 'all'), ctlRange('الشفافية', o, 'opacity', .01, 1, .01, pct), btn('تعبئة الطبقة/التحديد كاملاً', fillSelection)); break;
     case 'gradient': add(ctlSeg(o, 'type', [['linear', 'خطي'], ['radial', 'شعاعي'], ['conic', 'زاوي'], ['reflected', 'منعكس']]), ctlSelect('الألوان', o, 'preset', GRADS.map((g, i) => [i, g.n])), ctlCheck('عكس', o, 'reverse'), ctlRange('الشفافية', o, 'opacity', .01, 1, .01, pct)); break;
     case 'shape': add(ctlSelect('الشكل', o, 'kind', SHAPES, () => UI.buildOptbar()), ctlCheck('تعبئة (اللون الأمامي)', o, 'fill'), ctlCheck('حدود (اللون الخلفي)', o, 'stroke'), ctlRange('سماكة الحد', o, 'strokeW', 1, 100, 1, px)); if (o.kind === 'round') add(ctlRange('الاستدارة', o, 'radius', 0, 300, 1, px)); if (o.kind === 'polygon') add(ctlRange('الأضلاع', o, 'sides', 3, 12)); if (o.kind === 'star') add(ctlRange('الرؤوس', o, 'points', 3, 16)); break;
@@ -3287,8 +3293,8 @@ DLG.ocr = function () {
       const w = await OCR.getWorker(lang, m => { if ($('#ocB')) prog(m.progress || 0, (STAT[m.status] || m.status) + '… ' + Math.round((m.progress || 0) * 100) + '%'); });
       prog(.05, 'قراءة النص…');
       const { data } = await w.recognize(src.canvas);
-      lines = (data.lines || []).filter(l => l.text.trim() && l.confidence > 25).map(l => ({ text: l.text.trim(), conf: l.confidence, box: { x: src.b.x + l.bbox.x0 / src.s, y: src.b.y + l.bbox.y0 / src.s, w: (l.bbox.x1 - l.bbox.x0) / src.s, h: (l.bbox.y1 - l.bbox.y0) / src.s } }));
-      const txt = lines.length ? lines.map(l => l.text).join('\n') : (data.text || '').trim();
+      lines = (data.lines || []).filter(l => l.text.trim() && l.confidence > 25).map(l => ({ text: l.text.replace(/[\u200e\u200f\u202a-\u202e]/g, '').trim(), conf: l.confidence, box: { x: src.b.x + l.bbox.x0 / src.s, y: src.b.y + l.bbox.y0 / src.s, w: (l.bbox.x1 - l.bbox.x0) / src.s, h: (l.bbox.y1 - l.bbox.y0) / src.s } }));
+      const txt = lines.length ? lines.map(l => l.text).join('\n') : (data.text || '').replace(/[\u200e\u200f\u202a-\u202e]/g, '').trim();
       if (!$('#ocR')) return; $('#ocR').value = txt; $('#ocA').hidden = !txt;
       prog(1, txt ? `✓ تم استخراج ${lines.length || 1} سطر (الدقة ${Math.round(data.confidence || 0)}%)` : 'لم يتم العثور على نص واضح — جرّب تحديد منطقة النص فقط أو تغيير اللغة');
     } catch (e) { prog(0, 'تعذر تحميل أداة القراءة — تأكد من اتصال الإنترنت ثم حاول مرة أخرى'); }
@@ -3340,6 +3346,70 @@ DLG.logo = function () {
   document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't' && !$('#ws-design').hidden) { e.preventDefault(); e.stopImmediatePropagation(); DLG.ocr(); } }, true);
   /* quick buttons in the photo edit tab */
   PANELS.edit = (orig => function (b) { orig.call(this, b); const row = $('#edS') && $('#edS').previousElementSibling; if (row && row.classList.contains('icon-row') && !$('#edOcr')) { const a = btn('📝 استخراج النص', () => DLG.ocr()); a.id = 'edOcr'; const c = btn('🖼 استخراج اللوجو', () => DLG.logo()); row.append(a, c); } })(PANELS.edit);
+})();
+/* ============================== Beauty / portrait retouch panel ============================== */
+Object.assign(TMETA, { 'retouch:smooth': ['فرشاة تنعيم البشرة', '', 'blurT'], 'retouch:whiten': ['فرشاة تبييض الأسنان', '', 'sponge'], 'retouch:brighteye': ['فرشاة إشراق العين', '', 'dodge'], 'retouch:colorize': ['فرشاة التلوين (شفايف، شعر، عيون)', '', 'brush'] });
+TG[14].push('retouch:smooth', 'retouch:whiten', 'retouch:brighteye', 'retouch:colorize');
+const BEAUTY_S = [['smooth', 'تنعيم البشرة', 0, 100], ['tex', 'الحفاظ على الملمس', 0, 100], ['glow', 'إشراقة ونعومة', 0, 100], ['bright', 'تفتيح البشرة', -50, 100], ['even', 'توحيد اللون (إزالة الاحمرار)', 0, 100], ['warm', 'دفء البشرة', -50, 50], ['clar', 'وضوح الملامح', 0, 100], ['vig', 'تركيز على الوجه', 0, 100]];
+const BEAUTY_PRE = [['طبيعي', { smooth: 35, tex: 60, glow: 15, bright: 10, even: 30, warm: 5, clar: 20, vig: 0 }], ['ناعم', { smooth: 60, tex: 45, glow: 35, bright: 15, even: 45, warm: 8, clar: 10, vig: 10 }], ['مشرق', { smooth: 45, tex: 55, glow: 50, bright: 30, even: 35, warm: 0, clar: 25, vig: 0 }], ['استوديو', { smooth: 55, tex: 50, glow: 25, bright: 15, even: 50, warm: 3, clar: 35, vig: 25 }], ['دافئ ذهبي', { smooth: 45, tex: 55, glow: 30, bright: 12, even: 30, warm: 30, clar: 20, vig: 15 }], ['بارد هادئ', { smooth: 45, tex: 55, glow: 20, bright: 10, even: 40, warm: -25, clar: 15, vig: 10 }]];
+/* soft skin probability from YCbCr */
+function skinP(r, g, b) { const cb = 128 - .168736 * r - .331264 * g + .5 * b, cr = 128 + .5 * r - .418688 * g - .081312 * b; const a = 1 - Math.max(0, Math.abs(cb - 102) - 22) / 14, c = 1 - Math.max(0, Math.abs(cr - 153) - 22) / 14; return clamp(Math.min(a, c), 0, 1) * (r > 50 ? 1 : r / 50); }
+function beautyApply(cv, v) {
+  const x = cv.getContext('2d'), w = cv.width, h = cv.height, id = x.getImageData(0, 0, w, h), d = id.data, md = Math.min(w, h);
+  const P = new Float32Array(w * h); for (let i = 0; i < P.length; i++) { const k = i * 4; P[i] = d[k + 3] ? skinP(d[k], d[k + 1], d[k + 2]) : 0; }
+  if (v.smooth > 0) {
+    const bl = new ImageData(new Uint8ClampedArray(d), w, h); FILTERS.blurImageData(bl, Math.max(2, md * .007 * (.4 + v.smooth / 100)));
+    const fine = new ImageData(new Uint8ClampedArray(d), w, h); FILTERS.blurImageData(fine, Math.max(1, md * .0012));
+    const st = v.smooth / 100, keep = v.tex / 100;
+    for (let i = 0; i < P.length; i++) { if (P[i] < .05) continue; const k = i * 4; const df = Math.abs(d[k] - bl.data[k]) + Math.abs(d[k + 1] - bl.data[k + 1]) + Math.abs(d[k + 2] - bl.data[k + 2]); const e = Math.max(0, 1 - df / 70); const f = st * P[i] * e;
+      for (let c = 0; c < 3; c++) { const hp = d[k + c] - fine.data[k + c]; d[k + c] = lerp(d[k + c], bl.data[k + c] + hp * keep * .9, f); } }
+  }
+  for (let i = 0; i < P.length; i++) { const p = P[i]; if (p < .05) continue; const k = i * 4; let r = d[k], g = d[k + 1], b = d[k + 2];
+    if (v.even) { const red = r - (g + b) / 2; if (red > 40) { const t = (red - 40) * v.even / 100 * .35 * p; r -= t; g += t * .35; b += t * .2; } }
+    if (v.bright) { const t = v.bright / 100 * p; if (t > 0) { r += (255 - r) * t * .3; g += (255 - g) * t * .3; b += (255 - b) * t * .3; } else { r *= 1 + t * .3; g *= 1 + t * .3; b *= 1 + t * .3; } }
+    if (v.warm) { const t = v.warm / 100 * p * 18; r += t; b -= t; }
+    d[k] = r; d[k + 1] = g; d[k + 2] = b; }
+  x.putImageData(id, 0, 0);
+  if (v.glow > 0) { const g = mkCanvas(w, h), gx = g.getContext('2d'); gx.filter = `blur(${Math.max(2, md * .02)}px) brightness(1.15)`; gx.drawImage(cv, 0, 0); gx.filter = 'none'; x.save(); x.globalCompositeOperation = 'soft-light'; x.globalAlpha = v.glow / 100 * .55; x.drawImage(g, 0, 0); x.globalCompositeOperation = 'screen'; x.globalAlpha = v.glow / 100 * .12; x.drawImage(g, 0, 0); x.restore(); }
+  if (v.clar > 0) runAdj('sharpen', cv, { amount: v.clar * .8, r: Math.max(1, md * .0015) });
+  if (v.vig > 0) runAdj('vignette', cv, { amount: v.vig * .7, size: 60, soft: 70 });
+}
+PANELS.beauty = function (b) {
+  const L = photoLayer();
+  if (!L || L.type !== 'raster') { b.innerHTML = '<div class="pane note">افتح صورة من جهازك أولاً (زر «أضف صورة» أو قائمة ملف ← فتح)، ثم ارجع لتبويب التجميل.</div>'; return; }
+  if (!this._bt || this._bt.id !== L.id || this._bt.ver !== L.ver) this._bt = { id: L.id, base: cloneCanvas(L.canvas), v: Object.fromEntries(BEAUTY_S.map(s => [s[0], s[0] === 'tex' ? 60 : 0])), ver: L.ver };
+  const E = this._bt;
+  b.innerHTML = `<div class="pane"><div class="subhead">✨ تجميل الصورة: ${esc(L.name)}</div>
+    <button class="btn primary" id="btAuto">✨ تجميل تلقائي بضغطة</button>
+    <div class="subhead">أنماط جاهزة</div><div class="chips" id="btPre"></div>
+    <div class="subhead">تعديل يدوي (النتيجة تظهر فوراً)</div><div id="btS" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="subhead">فرش التجميل — ارسم على المكان المطلوب</div>
+    <div class="icon-row" id="btB"></div>
+    <div class="note" id="btHint">اختر فرشاة ثم ارسم على الصورة. لون التلوين = اللون الأمامي (اختره من الألوان).</div>
+    <div class="icon-row"><button class="btn sm" id="btReset">إرجاع الأصل</button><button class="btn sm" id="btCompare">👁 اضغط مطولاً للمقارنة بالأصل</button></div></div>`;
+  let raf = 0, ct = 0;
+  const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { applyToLayer(L, E.base, cv => beautyApply(cv, E.v)); E.ver = L.ver; requestRender(); }); };
+  const done = (lbl = 'تجميل') => { clearTimeout(ct); ct = setTimeout(() => { commit(lbl); E.ver = L.ver; }, 350); };
+  const box = $('#btS'), inputs = {};
+  BEAUTY_S.forEach(([k, n, mn, mx]) => { const l = document.createElement('label'); l.className = 'prop'; l.innerHTML = `${n}<input type="range" min="${mn}" max="${mx}" value="${E.v[k]}"><output>${E.v[k]}</output>`; const i = l.querySelector('input'); inputs[k] = i; i.oninput = () => { E.v[k] = +i.value; l.querySelector('output').textContent = i.value; run(); }; i.onchange = () => done(); box.appendChild(l); });
+  const setAll = (vals, name) => { Object.assign(E.v, vals); Object.entries(vals).forEach(([k, val]) => { if (inputs[k]) { inputs[k].value = val; inputs[k].nextElementSibling.textContent = val; } }); run(); done('تجميل: ' + name); appliedFx(null, name); };
+  BEAUTY_PRE.forEach(([n, vals]) => { const c = btn(n, () => setAll(vals, n), 'chip'); $('#btPre').appendChild(c); });
+  $('#btAuto').onclick = () => setAll(BEAUTY_PRE[0][1], 'تجميل تلقائي');
+  [['retouch:smooth', '🧴 تنعيم البشرة'], ['heal', '🩹 إزالة الحبوب والعيوب'], ['retouch:whiten', '😁 تبييض الأسنان'], ['retouch:brighteye', '👁 إشراق العيون'], ['redeye', '🔴 العين الحمراء'], ['retouch:colorize', '💄 تلوين الشفايف / الشعر'], ['liquify', '↔ نحت وتنحيف'], ['retouch:dodge', '☀ تفتيح منطقة'], ['retouch:burn', '🌑 تظليل (كونتور)']].forEach(([id, n]) => { const t = btn(n, () => { if (id.startsWith('retouch:')) { S.opts.retouch.size = Math.max(10, Math.round(Math.min(S.doc.w, S.doc.h) * (id === 'retouch:smooth' ? .06 : .03))); S.opts.retouch.strength = id === 'retouch:smooth' ? .6 : .4; } if (id === 'heal') S.opts.heal.size = Math.max(10, Math.round(Math.min(S.doc.w, S.doc.h) * .025)); pickTool(id); $$('#btB .btn').forEach(x => x.classList.toggle('primary', x === t)); toast('ارسم على الصورة — كبّر بإصبعين للدقة', 2200); if (MOBILE()) { $('#panels').classList.remove('open'); updMbar(); } }); $('#btB').appendChild(t); });
+  $('#btReset').onclick = () => { L.canvas = cloneCanvas(E.base); touch(L); Object.keys(E.v).forEach(k => E.v[k] = k === 'tex' ? 60 : 0); E.ver = L.ver; requestRender(); commit('إرجاع الأصل'); this.refresh(); };
+  const cmp = $('#btCompare'); let saved = null;
+  const show = on => { if (on) { saved = L.canvas; L.canvas = E.base; } else if (saved) { L.canvas = saved; saved = null; } touch(L); E.ver = L.ver; requestRender(); };
+  cmp.onpointerdown = () => show(true); cmp.onpointerup = cmp.onpointerleave = () => show(false);
+};
+(() => {
+  const pt = $('#ptabs'); const bt = document.createElement('button'); bt.dataset.tab = 'beauty'; bt.textContent = 'تجميل'; bt.onclick = () => openPanel('beauty'); pt.insertBefore(bt, pt.children[1]);
+  const d = $('#dock'); const db = document.createElement('button'); db.dataset.k = 'beauty'; db.title = 'تجميل الصورة'; db.setAttribute('aria-label', 'تجميل الصورة'); db.innerHTML = I('<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.5L12 15l-1.8-4.5L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>'); db.onclick = () => openPanel('beauty'); d.insertBefore(db, d.children[1]);
+  const mb = $('#mbar'); const m = document.createElement('button'); m.dataset.p = 'beauty'; m.innerHTML = db.innerHTML + 'تجميل'; m.onclick = () => openPanel('beauty'); mb.insertBefore(m, mb.querySelector('[data-p=edit]'));
+  PANELS.refresh = (orig => function () { if (this.tab === 'beauty') { const b = $('#pbody'); if (!b) return; $('#cpWrap').hidden = true; b.hidden = false; $$('#ptabs button[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'beauty')); this.beauty(b); this.layers($('#lbody')); if (typeof updDock === 'function') updDock(); if (typeof updMbar === 'function') updMbar(); return; } orig.call(this); })(PANELS.refresh);
+  const M = n => (MENUS.find(x => x[0] === n) || [, []])[1];
+  M('صورة').splice(0, 0, ['✨ تجميل الصورة (البشرة، الأسنان، العيون)…', '', () => openPanel('beauty')]);
+  /* opening a photo from the device shows the beauty/edit tools right away */
+  const steps = $('#steps'); if (steps && !steps.querySelector('[data-s=beauty]')) { const b = document.createElement('button'); b.dataset.s = 'beauty'; b.innerHTML = '<i>✨</i>تجميل'; b.onclick = e => { e.stopPropagation(); openPanel('beauty'); }; steps.insertBefore(b, steps.querySelector('[data-s=looks]')); }
 })();
 /* ============================== VIDEO EDITOR ============================== */
 const VID = (() => {
