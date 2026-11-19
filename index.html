@@ -4123,6 +4123,136 @@ document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.tar
 view.addEventListener('dblclick', () => { if (S.tool === 'polylasso') XT.polylasso.close(); });
 /* cursors for brush-like new tools */
 TOOLS_OVERLAY = (orig => function () { orig(); const sz = { bger: 1, patstamp: 1, mixer: 1, healbr: 1, remove: 1 }[S.tool] && S.opts[S.tool].size; if (sz && HOVER.in && !D.space) { const r = sz * S.zoom / 2, x = vctx; x.save(); x.setTransform(DPR, 0, 0, DPR, 0, 0); x.strokeStyle = 'rgba(0,0,0,.7)'; x.beginPath(); x.arc(HOVER.sx, HOVER.sy, Math.max(1.5, r), 0, 7); x.stroke(); x.strokeStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(HOVER.sx, HOVER.sy, Math.max(1.5, r) - 1, 0, 7); x.stroke(); x.restore(); } })(TOOLS_OVERLAY);
+/* ============================== Artboards, slices, real view rotation, ZIP export ============================== */
+/* ---------- tiny ZIP writer (stored, no compression) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u) { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = new Uint8Array(await f.blob.arrayBuffer()), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    parts.push(h.buffer, name, data);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    central.push(c.buffer, name); off += 30 + name.length + data.length;
+  }
+  const csize = central.reduce((a, b) => a + b.byteLength, 0), e = new DataView(new ArrayBuffer(22)); e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, e.buffer], { type: 'application/zip' });
+}
+async function exportRegions(regs, base) {
+  if (!regs.length) return toast('لا توجد مناطق للتصدير'); compositeTo(docCtx, S.layers, S.doc.w, S.doc.h); const files = [];
+  for (const r of regs) { const c = mkCanvas(Math.max(1, Math.round(r.w)), Math.max(1, Math.round(r.h))); c.getContext('2d').drawImage(docCanvas, -Math.round(r.x), -Math.round(r.y)); files.push({ name: (r.name || 'جزء').replace(/[\\/:*?"<>|]/g, '-') + '.png', blob: await canvasToBlob(c) }); }
+  if (files.length === 1) return saveFile(files[0].name, files[0].blob);
+  saveFile((S.doc.name || base) + ' - ' + base + '.zip', await makeZip(files));
+}
+
+/* ---------- grow the document (used by artboards) ---------- */
+function growDoc(w, h) {
+  if (w <= S.doc.w && h <= S.doc.h) return; const ow = S.doc.w, oh = S.doc.h; S.doc.w = Math.max(w, ow); S.doc.h = Math.max(h, oh);
+  S.layers.forEach(L => { if (L._mask) { const m = mkCanvas(S.doc.w, S.doc.h), x = m.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, m.width, m.height); x.clearRect(0, 0, ow, oh); x.drawImage(L._mask, 0, 0, ow, oh); L._mask = m; } });
+  docCanvas.width = S.doc.w; docCanvas.height = S.doc.h; docDirty = true; fitView();
+}
+
+/* ---------- artboards ---------- */
+Object.assign(ICONS, { artboard: I('<rect x="6" y="6" width="12" height="12"/><path d="M6 2v3M18 2v3M6 19v3M18 19v3M2 6h3M2 18h3M19 6h3M19 18h3"/>'), slice: I('<path d="M4 20 20 4"/><path d="M14 4h6v6"/><rect x="3" y="12" width="9" height="9" stroke-dasharray="2 2"/>'), slicesel: I('<path d="M6 3v15l4-4 3 7 2-1-3-7h6Z"/><path d="M15 3l6 6"/>') });
+Object.assign(S.opts, { artboard: { preset: '1080x1080' }, slice: { rows: 1, cols: 3 }, slicesel: {} });
+Object.assign(TMETA, { artboard: ['أداة لوحة العمل', 'V', 'artboard'], slice: ['أداة التقطيع', 'C', 'slice'], slicesel: ['أداة تحديد القطعة', 'C', 'slicesel'] });
+TOOL_NAMES.artboard = 'لوحة العمل'; TOOL_NAMES.slice = 'التقطيع'; TOOL_NAMES.slicesel = 'تحديد القطعة';
+(() => { const g1 = TG.find(x => Array.isArray(x) && x.includes('move')); g1.push('artboard'); const g2 = TG.find(x => Array.isArray(x) && x.includes('crop')); g2.push('slice', 'slicesel'); TGCUR.length = 0; TG.forEach(g => TGCUR.push(Array.isArray(g) ? g[0] : null)); })();
+TOOL_HELP.artboard = ['لوحات العمل: عدة تصاميم بمقاسات مختلفة في ملف واحد (مثلاً منشور + ستوري + غلاف) وتصديرها مرة واحدة.', ['اسحب على اللوحة لرسم لوحة عمل، أو اضغط «+ لوحة جديدة».', 'اسحب اسم اللوحة لتحريكها مع محتواها.', 'اضغط «تصدير كل اللوحات» فتنزل كلها في ملف ZIP.']];
+TOOL_HELP.slice = ['التقطيع: تقسيم التصميم إلى أجزاء وتصديرها كصور منفصلة — مثالي لشبكة إنستغرام (تصميم واحد يتوزع على 3 أو 9 منشورات).', ['اسحب لرسم قطعة، أو استخدم «تقطيع شبكي» واختر الصفوف والأعمدة.', 'اضغط «تصدير القطع» فتنزل كل القطع مرقمة.']];
+TOOL_HELP.slicesel = ['تحديد وتحريك وتعديل القطع.', ['انقر على قطعة لتحديدها، اسحبها لتحريكها، Delete لحذفها.']];
+const AB_PRE = [['1080x1080', 'منشور إنستغرام'], ['1080x1350', 'منشور 4:5'], ['1080x1920', 'ستوري / ريلز'], ['1280x720', 'صورة يوتيوب'], ['1640x624', 'غلاف فيسبوك'], ['1500x500', 'غلاف X'], ['1920x1080', 'شاشة 1080p'], ['2480x3508', 'A4']];
+const AB = { sel: -1 };
+function boards() { return S.doc.artboards = S.doc.artboards || []; }
+function addBoard(w, h, name) {
+  const B = boards(); let x = 0, y = 0;
+  if (B.length) { const r = B.reduce((m, b) => Math.max(m, b.x + b.w), 0); x = r + 100; y = 0; }
+  else if (!B.length && (S.layers.some(l => l.type !== 'adj' && contentBounds(l.canvas)))) { B.push({ id: uid(), name: 'لوحة 1', x: 0, y: 0, w: S.doc.w, h: S.doc.h }); x = S.doc.w + 100; }
+  const b = { id: uid(), name: name || 'لوحة ' + (B.length + 1), x, y, w, h }; B.push(b);
+  growDoc(x + w, y + h);
+  const c = mkCanvas(w, h), cx = c.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, w, h); const L = newLayerObj('خلفية ' + b.name, c, x, y); L.boardBg = b.id; S.layers.unshift(L);
+  AB.sel = B.length - 1; requestRender(); commit('لوحة عمل جديدة'); toast(`تمت إضافة «${b.name}» ${w}×${h}`); return b;
+}
+function boardAt(p) { const z = S.zoom, B = boards(); for (let i = B.length - 1; i >= 0; i--) { const b = B[i]; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y - 26 / z && p.y <= b.y) return { i, label: true }; } for (let i = B.length - 1; i >= 0; i--) { const b = B[i]; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return { i, label: false }; } return null; }
+XT.artboard = {
+  down(p) {
+    const h = boardAt(p);
+    if (h) { AB.sel = h.i; const b = boards()[h.i]; this.mv = { b, x: b.x, y: b.y, p, ls: S.layers.filter(L => { if (L.type === 'adj') return false; const cb = contentBounds(L.canvas); if (!cb) return false; const cx = L.x + cb.x + cb.w / 2, cy = L.y + cb.y + cb.h / 2; return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h; }).map(L => ({ L, x: L.x, y: L.y, ax: L.text?.ax, ay: L.text?.ay })) }; UI.buildOptbar(); return; }
+    this.mv = null; this.a = p; this.b = p;
+  },
+  move(p) { if (this.mv) { const dx = Math.round(p.x - this.mv.p.x), dy = Math.round(p.y - this.mv.p.y); this.mv.b.x = this.mv.x + dx; this.mv.b.y = this.mv.y + dy; this.mv.ls.forEach(r => { r.L.x = r.x + dx; r.L.y = r.y + dy; if (r.L.type === 'text') { r.L.text.ax = r.ax + dx; r.L.text.ay = r.ay + dy; } }); requestRender(); return; } this.b = p; requestRender(false); },
+  up() {
+    if (this.mv) { const b = this.mv.b; this.mv = null; if (b.x < 0 || b.y < 0) { const sx = Math.max(0, -b.x), sy = Math.max(0, -b.y); boards().forEach(q => { q.x += sx; q.y += sy; }); S.layers.forEach(L => { L.x += sx; L.y += sy; if (L.type === 'text') { L.text.ax += sx; L.text.ay += sy; } }); } growDoc(Math.max(...boards().map(q => q.x + q.w)), Math.max(...boards().map(q => q.y + q.h))); commit('تحريك لوحة العمل'); return; }
+    const a = this.a, b = this.b; this.a = null; const w = Math.round(Math.abs(b.x - a.x)), h = Math.round(Math.abs(b.y - a.y)); if (w < 20 || h < 20) { AB.sel = -1; UI.buildOptbar(); requestRender(false); return; }
+    const B = boards(); const nb = { id: uid(), name: 'لوحة ' + (B.length + 1), x: Math.round(Math.min(a.x, b.x)), y: Math.round(Math.min(a.y, b.y)), w, h }; B.push(nb); AB.sel = B.length - 1; requestRender(false); commit('لوحة عمل'); UI.buildOptbar();
+  },
+  overlay(x, z) { if (this.a) { x.strokeStyle = '#2f9bff'; x.lineWidth = 1.5 / z; x.strokeRect(this.a.x, this.a.y, this.b.x - this.a.x, this.b.y - this.a.y); } }
+};
+/* draw artboard frames & names always */
+TOOLS_OVERLAY = (orig => function () {
+  orig(); const B = S.doc.artboards, Sl = S.doc.slices; if ((!B || !B.length) && (!Sl || !Sl.length)) return; const z = S.zoom, x = vctx; x.save(); x.setTransform(DPR * z, 0, 0, DPR * z, DPR * S.panX, DPR * S.panY);
+  (B || []).forEach((b, i) => { x.lineWidth = (i === AB.sel ? 2 : 1) / z; x.strokeStyle = i === AB.sel ? '#2f9bff' : 'rgba(180,180,180,.8)'; x.strokeRect(b.x, b.y, b.w, b.h); x.font = `${12 / z}px sans-serif`; x.fillStyle = i === AB.sel ? '#2f9bff' : '#aaa'; x.textBaseline = 'bottom'; x.fillText(`${b.name}  ${b.w}×${b.h}`, b.x, b.y - 5 / z); });
+  if (Sl && Sl.length && (['slice', 'slicesel'].includes(S.tool) || S.showSlices)) Sl.forEach((s, i) => { x.lineWidth = 1 / z; x.strokeStyle = i === SL.sel ? '#ffb000' : '#00a2ff'; x.setLineDash([6 / z, 3 / z]); x.strokeRect(s.x, s.y, s.w, s.h); x.setLineDash([]); const t = String(i + 1).padStart(2, '0'); x.font = `bold ${12 / z}px sans-serif`; x.fillStyle = i === SL.sel ? '#ffb000' : '#00a2ff'; x.fillRect(s.x, s.y, 26 / z, 16 / z); x.fillStyle = '#fff'; x.textBaseline = 'top'; x.fillText(t, s.x + 4 / z, s.y + 2 / z); });
+  x.restore();
+})(TOOLS_OVERLAY);
+
+/* ---------- slices ---------- */
+const SL = { sel: -1 };
+function slices() { return S.doc.slices = S.doc.slices || []; }
+function gridSlices(rows, cols) { const area = AB.sel >= 0 && boards()[AB.sel] ? boards()[AB.sel] : { x: 0, y: 0, w: S.doc.w, h: S.doc.h }; S.doc.slices = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) slices().push({ name: `${S.doc.name || 'قطعة'}_${String(r * cols + c + 1).padStart(2, '0')}`, x: Math.round(area.x + area.w * c / cols), y: Math.round(area.y + area.h * r / rows), w: Math.round(area.w / cols), h: Math.round(area.h / rows) }); requestRender(false); scheduleSave(); UI.buildOptbar(); toast(`تم التقطيع إلى ${rows * cols} أجزاء — اضغط «تصدير القطع»`); }
+XT.slice = {
+  down(p) { this.a = p; this.b = p; }, move(p) { this.b = p; requestRender(false); },
+  up() { const a = this.a, b = this.b; this.a = null; const w = Math.round(Math.abs(b.x - a.x)), h = Math.round(Math.abs(b.y - a.y)); if (w < 4 || h < 4) return; slices().push({ name: `${S.doc.name || 'قطعة'}_${String(slices().length + 1).padStart(2, '0')}`, x: Math.round(Math.min(a.x, b.x)), y: Math.round(Math.min(a.y, b.y)), w, h }); SL.sel = slices().length - 1; scheduleSave(); requestRender(false); UI.buildOptbar(); },
+  overlay(x, z) { if (this.a) { x.strokeStyle = '#00a2ff'; x.lineWidth = 1 / z; x.strokeRect(this.a.x, this.a.y, this.b.x - this.a.x, this.b.y - this.a.y); } }
+};
+XT.slicesel = {
+  down(p) { const s = slices(); SL.sel = -1; for (let i = s.length - 1; i >= 0; i--) { const q = s[i]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) { SL.sel = i; break; } } if (SL.sel < 0) { D.mode = null; requestRender(false); return UI.buildOptbar(); } const q = s[SL.sel]; this.d = { p, x: q.x, y: q.y }; requestRender(false); UI.buildOptbar(); },
+  move(p) { if (!this.d) return; const q = slices()[SL.sel]; q.x = Math.round(this.d.x + p.x - this.d.p.x); q.y = Math.round(this.d.y + p.y - this.d.p.y); requestRender(false); }, up() { this.d = null; scheduleSave(); }
+};
+document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; if ((e.key === 'Delete' || e.key === 'Backspace') && S.tool === 'slicesel' && SL.sel >= 0) { e.preventDefault(); e.stopImmediatePropagation(); slices().splice(SL.sel, 1); SL.sel = -1; scheduleSave(); requestRender(false); UI.buildOptbar(); } if ((e.key === 'Delete' || e.key === 'Backspace') && S.tool === 'artboard' && AB.sel >= 0) { e.preventDefault(); e.stopImmediatePropagation(); boards().splice(AB.sel, 1); AB.sel = -1; commit('حذف لوحة عمل'); requestRender(false); UI.buildOptbar(); } }, true);
+
+/* ---------- real view rotation (like Photoshop's Rotate View tool, R) ---------- */
+S.viewRot = 0;
+function applyViewRot() { view.style.transform = S.viewRot ? `rotate(${S.viewRot}deg)` : ''; view.style.transformOrigin = '50% 50%'; VP.classList.toggle('norulers', !!S.viewRot || !S.rulers); requestRender(false); }
+toDoc = (orig => function (e) {
+  if (!S.viewRot) return orig(e); const r = VP.getBoundingClientRect(), cx = r.width / 2, cy = r.height / 2; let sx = e.clientX - r.left - cx, sy = e.clientY - r.top - cy; const a = -S.viewRot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); const rx = sx * c - sy * s + cx, ry = sx * s + sy * c + cy;
+  return { x: (rx - S.panX) / S.zoom, y: (ry - S.panY) / S.zoom, sx: rx, sy: ry };
+})(toDoc);
+XT.rotview = {
+  down(p, e) { const r = VP.getBoundingClientRect(); this.c = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; this.a0 = Math.atan2(e.clientY - this.c.y, e.clientX - this.c.x); this.r0 = S.viewRot; },
+  move(p, e) { let a = this.r0 + (Math.atan2(e.clientY - this.c.y, e.clientX - this.c.x) - this.a0) * 180 / Math.PI; if (e.shiftKey) a = Math.round(a / 15) * 15; S.viewRot = ((a + 540) % 360) - 180; applyViewRot(); UI.buildOptbar(); },
+  up() { }
+};
+view.addEventListener('dblclick', () => { if (S.tool === 'rotview') { S.viewRot = 0; applyViewRot(); UI.buildOptbar(); } });
+TOOL_HELP.rotview = ['تدوير العرض: يدوّر طريقة العرض فقط (مثل تدوير الورقة على المكتب) ليسهل الرسم بزاوية مريحة — لا يغيّر التصميم نفسه.', ['اسحب حول مركز الشاشة لتدوير العرض.', 'اضغط Shift لزوايا 15°.', 'انقر مرتين أو «إعادة ضبط» للرجوع.']];
+HELPX.rotview = 'اسحب لتدوير العرض فقط (لا يتغير التصميم) — Shift لزوايا 15°، نقر مزدوج للإرجاع.';
+TMETA.rotview = ['أداة تدوير العرض', 'R', 'rotview'];
+
+/* ---------- option bars ---------- */
+UI.buildOptbar = (orig => function () {
+  orig.call(UI); if (TF.active) return; const t = S.tool, bar = $('#optbar'), add = (...e) => e.forEach(x => bar.appendChild(x)), note = s => { const n = document.createElement('span'); n.className = 'ctl'; n.textContent = s; return n; };
+  if (t === 'artboard') {
+    const B = boards(), b = B[AB.sel]; const sel = document.createElement('select'); sel.className = 'ctl'; sel.innerHTML = AB_PRE.map(([v, n]) => `<option value="${v}">${n} ${v.replace('x', '×')}</option>`).join(''); sel.value = S.opts.artboard.preset; sel.onchange = () => S.opts.artboard.preset = sel.value;
+    add(sel, btn('+ لوحة جديدة', () => { const [w, h] = sel.value.split('x').map(Number); addBoard(w, h, AB_PRE.find(q => q[0] === sel.value)[1]); UI.buildOptbar(); }, 'btn sm primary'));
+    if (b) add(note(`«${b.name}» ${b.w}×${b.h}`), btn('إعادة تسمية', () => { const n = prompt('اسم اللوحة', b.name); if (n) { b.name = n; commit('اسم اللوحة'); UI.buildOptbar(); } }), btn('تصدير هذه', () => exportRegions([b], 'لوحة')), btn('حذف', () => { B.splice(AB.sel, 1); AB.sel = -1; commit('حذف لوحة'); UI.buildOptbar(); }));
+    add(btn(`⬇ تصدير كل اللوحات (${B.length})`, () => exportRegions(B, 'لوحات العمل')));
+  }
+  if (t === 'slice' || t === 'slicesel') {
+    const o = S.opts.slice; add(ctlRange('صفوف', o, 'rows', 1, 10), ctlRange('أعمدة', o, 'cols', 1, 10), btn('تقطيع شبكي', () => gridSlices(o.rows, o.cols), 'btn sm primary'), note(`${slices().length} قطعة`), btn(`⬇ تصدير القطع`, () => exportRegions(slices(), 'القطع')), btn('مسح الكل', () => { S.doc.slices = []; SL.sel = -1; scheduleSave(); requestRender(false); UI.buildOptbar(); }));
+  }
+  if (t === 'rotview') add(note(`زاوية العرض: ${Math.round(S.viewRot)}°`), btn('↺ 90°', () => { S.viewRot = ((S.viewRot - 90 + 540) % 360) - 180; applyViewRot(); UI.buildOptbar(); }), btn('↻ 90°', () => { S.viewRot = ((S.viewRot + 90 + 540) % 360) - 180; applyViewRot(); UI.buildOptbar(); }), btn('إعادة ضبط العرض', () => { S.viewRot = 0; applyViewRot(); UI.buildOptbar(); }), btn('تدوير التصميم نفسه بزاوية…', () => DLG.rotView()));
+})(UI.buildOptbar);
+/* the old rotview-layer dialog stays reachable from the Image menu */
+(() => {
+  const M = n => MENUS.find(m => m[0] === n)[1];
+  M('صورة').push(['تدوير اللوحة بزاوية…', '', () => DLG.rotView()]);
+  M('ملف').splice(M('ملف').findIndex(it => Array.isArray(it) && /تصدير/.test(it[0])) + 1, 0, ['تصدير لوحات العمل (ZIP)', '', () => exportRegions(boards(), 'لوحات العمل')], ['تصدير القطع (ZIP)', '', () => exportRegions(slices(), 'القطع')]);
+  M('عرض').push(['إظهار القطع', '', () => { S.showSlices = !S.showSlices; requestRender(false); }], ['تدوير العرض: إعادة ضبط', 'Esc', () => { S.viewRot = 0; applyViewRot(); }]);
+  M('طبقة').push('-', ['لوحة عمل جديدة…', '', () => pickTool('artboard')]);
+  document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.stopImmediatePropagation(); pickTool('rotview'); } }, true);
+})();
+drawRulers = (orig => function () { if (S.viewRot) { VP.classList.add('norulers'); return; } orig(); })(drawRulers);
 /* ============================== VIDEO EDITOR ============================== */
 const VID = (() => {
   const ASPECTS = { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [1080, 1080], '4:5': [864, 1080], '4:3': [1024, 768], '21:9': [1344, 576] };
