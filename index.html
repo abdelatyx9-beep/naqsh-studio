@@ -592,6 +592,26 @@ body{padding:0!important}
 .mbar button{flex:1 1 0;min-width:0;font-size:10.5px;padding-inline:2px}
 .lp .lrow.ingrp{padding-inline-start:26px}.lp .lrow.multi{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}.lp .lrow.grow{background:var(--panel-2)}.lp .lrow.grow.on{background:var(--panel-3)}.lp .lrow.grow .adjic{font-size:17px;border:0;background:none}.lp .lrow .lk{cursor:pointer}.smb{color:var(--accent)}
 .toolbar{overflow-y:auto;overflow-x:hidden;scrollbar-width:none}.toolbar::-webkit-scrollbar{display:none}
+.bp-btn{display:flex;align-items:center;gap:4px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:2px 6px;color:var(--fg);flex:none}
+.bp-btn canvas{width:26px;height:26px}.bp-btn span{font-size:11px;min-width:24px}
+.bpick{position:fixed;z-index:80;width:320px;max-height:70vh;overflow:auto;background:var(--pop);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:10px;display:flex;flex-direction:column;gap:8px}
+.bp-top{display:flex;gap:10px;align-items:center}.bp-top canvas{flex:none;background:var(--ground);border-radius:4px;cursor:crosshair}
+.bp-sl{display:flex;flex-direction:column;gap:4px;flex:1;font-size:11px;color:var(--muted)}.bp-sl label{display:grid;grid-template-columns:52px 1fr 44px;align-items:center;gap:4px}
+.bp-sl input[type=number]{width:44px;background:var(--ground);border:1px solid var(--line-2);color:var(--fg);border-radius:3px;font-size:11px}
+.bpick input[type=search]{background:var(--ground);border:1px solid var(--line-2);border-radius:4px;padding:5px 8px;color:var(--fg)}
+.bp-recent{display:flex;gap:4px;flex-wrap:wrap}.bp-mini{background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:1px}
+.bpick details{border-top:1px solid var(--line)}.bpick summary{cursor:pointer;padding:6px 2px;font-size:12px;color:var(--fg)}
+.bp-grid{display:flex;flex-direction:column;gap:2px;padding-bottom:6px}
+.bp-item{display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;gap:0 8px;align-items:center;background:none;border:1px solid transparent;border-radius:4px;padding:3px;color:var(--fg);text-align:start;font-size:12px}
+.bp-item canvas:first-child{grid-row:1/3}.bp-item canvas:last-child{width:100%;height:26px}
+.bp-item:hover{background:var(--panel-3)}.bp-item.on{border-color:var(--accent);background:var(--accent-soft)}
+.fgal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:65vh;overflow:auto}
+.fgal-it{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px;color:var(--fg);font-size:11.5px}
+.fgal-it:hover{border-color:var(--accent)}.fgal-it canvas{max-width:100%;max-height:110px}
+.craw{display:flex;flex-direction:column;gap:8px;max-height:62vh;overflow:auto}.neural{display:flex;flex-direction:column;gap:8px}
+.tip-card{position:fixed;z-index:90;width:270px;background:var(--pop);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:10px 12px;font-size:12.5px;color:var(--fg);pointer-events:none;line-height:1.6}
+.tip-card .tc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}.tip-card .tc-top svg{width:18px;height:18px;color:var(--accent)}.tip-card kbd{margin-inline-start:auto;font-family:var(--f-mono);font-size:11px;background:var(--panel-3);border-radius:3px;padding:0 6px}
+.tip-card p{margin:0 0 4px;color:var(--muted)}.tip-card ol{margin:0;padding-inline-start:18px;color:var(--muted);font-size:12px}
 /* font library */
 .dlg.fb-dlg{width:min(980px,100%);height:min(760px,calc(100vh - 40px))}
 .dlg.fb-dlg .body{padding:0;gap:0;flex:1;min-height:0;overflow:hidden}
@@ -4253,6 +4273,294 @@ UI.buildOptbar = (orig => function () {
   document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.stopImmediatePropagation(); pickTool('rotview'); } }, true);
 })();
 drawRulers = (orig => function () { if (S.viewRot) { VP.classList.add('norulers'); return; } orig(); })(drawRulers);
+/* ============================== Brush presets (like Photoshop's Brush Preset picker) ============================== */
+const TIPGEN = {
+  rnd(seed) { let s = seed * 9301 + 49297; return () => (s = (s * 16807) % 2147483647) / 2147483647; },
+  circle(x, d, hard) { const r = d / 2, g = x.createRadialGradient(r, r, 0, r, r, r); g.addColorStop(0, '#000'); g.addColorStop(Math.max(.01, hard * .97), '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, d, d); },
+  noise(x, d, dens, rnd, sz = 1) { for (let i = 0; i < d * d * dens; i++) { x.fillRect(rnd() * d, rnd() * d, sz, sz); } },
+  make(kind, d) {
+    const c = mkCanvas(d, d), x = c.getContext('2d'), r = d / 2, R = this.rnd(kind.length * 7 + d); x.fillStyle = '#000';
+    switch (kind) {
+      case 'square': x.fillRect(d * .1, d * .1, d * .8, d * .8); break;
+      case 'pencil': { x.save(); x.beginPath(); x.arc(r, r, r * .95, 0, 7); x.clip(); this.noise(x, d, .55, R); x.restore(); break; }
+      case 'charcoal': { for (let i = 0; i < d * 3; i++) { const a = R() * 7, rr = Math.sqrt(R()) * r * .95; x.globalAlpha = .25 + R() * .5; x.beginPath(); x.ellipse(r + Math.cos(a) * rr, r + Math.sin(a) * rr, 1 + R() * d * .06, 1 + R() * d * .02, R() * 3, 0, 7); x.fill(); } break; }
+      case 'chalk': { x.save(); x.beginPath(); for (let i = 0; i < 24; i++) { const a = i / 24 * 7, rr = r * (.75 + R() * .2); i ? x.lineTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr) : x.moveTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr); } x.closePath(); x.clip(); this.noise(x, d, .8, R, Math.max(1, d / 60)); x.restore(); break; }
+      case 'pastel': { this.circle(x, d, .5); x.globalCompositeOperation = 'destination-out'; this.noise(x, d, .35, R, Math.max(1, d / 40)); break; }
+      case 'watercolor': { const g = x.createRadialGradient(r, r, r * .2, r, r, r * .95); g.addColorStop(0, 'rgba(0,0,0,.35)'); g.addColorStop(.8, 'rgba(0,0,0,.55)'); g.addColorStop(.92, 'rgba(0,0,0,.8)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); for (let i = 0; i < 30; i++) { const a = i / 30 * 7, rr = r * (.85 + R() * .15); i ? x.lineTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr) : x.moveTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr); } x.fill(); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = .25; this.noise(x, d, .2, R, Math.max(1, d / 30)); break; }
+      case 'ink': { x.beginPath(); for (let i = 0; i < 40; i++) { const a = i / 40 * 7, rr = r * (.82 + R() * .16); i ? x.lineTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr) : x.moveTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr); } x.fill(); break; }
+      case 'bristle': { for (let i = 0; i < 40; i++) { const a = R() * 7, rr = Math.sqrt(R()) * r * .9; x.globalAlpha = .4 + R() * .6; x.beginPath(); x.arc(r + Math.cos(a) * rr, r + Math.sin(a) * rr, Math.max(.6, d * .03), 0, 7); x.fill(); } break; }
+      case 'marker': { x.globalAlpha = .7; x.fillRect(d * .2, d * .05, d * .6, d * .9); break; }
+      case 'flat': { x.beginPath(); x.ellipse(r, r, r * .95, r * .18, 0, 0, 7); x.fill(); break; }
+      case 'spatter': { for (let i = 0; i < 26; i++) { const a = R() * 7, rr = Math.pow(R(), .7) * r * .9, s = Math.max(.6, (1 - rr / r) * d * .08 * R() + .8); x.beginPath(); x.arc(r + Math.cos(a) * rr, r + Math.sin(a) * rr, s, 0, 7); x.fill(); } break; }
+      case 'star': { x.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .4 : r * .95; i ? x.lineTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr) : x.moveTo(r + Math.cos(a) * rr, r + Math.sin(a) * rr); } x.closePath(); x.fill(); break; }
+      case 'grass': { x.lineCap = 'round'; for (let i = 0; i < 9; i++) { const bx = d * (.15 + .7 * R()), h = d * (.5 + .45 * R()), bend = (R() - .5) * d * .4; x.lineWidth = Math.max(1, d * .035); x.beginPath(); x.moveTo(bx, d); x.quadraticCurveTo(bx, d - h * .6, bx + bend, d - h); x.stroke(); } break; }
+      case 'leaf': { x.translate(r, r); x.rotate(-.6); x.beginPath(); x.moveTo(0, -r * .9); x.quadraticCurveTo(r * .55, 0, 0, r * .9); x.quadraticCurveTo(-r * .55, 0, 0, -r * .9); x.fill(); x.globalCompositeOperation = 'destination-out'; x.lineWidth = Math.max(1, d * .02); x.beginPath(); x.moveTo(0, -r * .8); x.lineTo(0, r * .8); x.stroke(); break; }
+      case 'cloud': { for (let i = 0; i < 18; i++) { const a = R() * 7, rr = Math.sqrt(R()) * r * .55, s = r * (.2 + R() * .3); const g = x.createRadialGradient(r + Math.cos(a) * rr, r + Math.sin(a) * rr, 0, r + Math.cos(a) * rr, r + Math.sin(a) * rr, s); g.addColorStop(0, 'rgba(0,0,0,.35)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, d, d); } break; }
+      case 'bokeh': { x.beginPath(); x.arc(r, r, r * .9, 0, 7); x.globalAlpha = .45; x.fill(); x.globalAlpha = 1; x.lineWidth = Math.max(1, d * .05); x.stroke(); break; }
+      case 'heart': { x.translate(r, r * 1.05); x.scale(r / 16, r / 16); x.beginPath(); x.moveTo(0, 10); x.bezierCurveTo(-16, -2, -10, -16, 0, -7); x.bezierCurveTo(10, -16, 16, -2, 0, 10); x.fill(); break; }
+      case 'hair': { x.lineCap = 'round'; for (let i = 0; i < 14; i++) { x.lineWidth = Math.max(.6, d * .012); x.globalAlpha = .5 + R() * .5; const sx = r + (R() - .5) * d * .5; x.beginPath(); x.moveTo(sx, d * .05); x.bezierCurveTo(sx + (R() - .5) * d * .4, d * .4, sx + (R() - .5) * d * .4, d * .6, sx + (R() - .5) * d * .3, d * .95); x.stroke(); } break; }
+      default: this.circle(x, d, .9);
+    }
+    return c;
+  }
+};
+const BRUSH_SETS = [
+  ['فرش عامة (General)', [['round', 'دائري ناعم', { hardness: 0 }], ['round', 'دائري صلب', { hardness: 1 }], ['round', 'دائري ناعم — ضغط للعتامة', { hardness: 0, flow: .3 }], ['round', 'دائري صلب — ضغط للحجم', { hardness: .9 }], ['square', 'مربع', { hardness: 1 }], ['flat', 'مسطح (خط عربي)', { angle: 45 }]]],
+  ['وسائط جافة (Dry Media)', [['pencil', 'قلم رصاص', { spacing: .08 }], ['charcoal', 'فحم', { spacing: .15 }], ['chalk', 'طباشير', { spacing: .15 }], ['pastel', 'باستيل', { spacing: .12 }]]],
+  ['وسائط رطبة (Wet Media)', [['watercolor', 'ألوان مائية', { spacing: .1, flow: .5 }], ['ink', 'حبر', { spacing: .06 }], ['bristle', 'زيتي (شعيرات)', { spacing: .08 }], ['marker', 'ماركر', { spacing: .05, angle: 30 }]]],
+  ['مؤثرات خاصة (Special Effects)', [['spatter', 'رذاذ', { spacing: .6, scatter: .5 }], ['star', 'نجوم', { spacing: 1.2, scatter: 1, sizeJit: .6, angleJit: 1 }], ['grass', 'عشب', { spacing: .5, scatter: .2, sizeJit: .4, angleJit: .15 }], ['leaf', 'أوراق شجر', { spacing: 1, scatter: 1, sizeJit: .5, angleJit: 1 }], ['cloud', 'سحب', { spacing: .4, scatter: .3, flow: .5 }], ['cloud', 'دخان', { spacing: .2, scatter: .1, flow: .25, angleJit: 1 }], ['bokeh', 'بوكيه (دوائر ضوء)', { spacing: 1.5, scatter: 1.2, sizeJit: .7 }], ['heart', 'قلوب', { spacing: 1.2, scatter: .8, sizeJit: .5, angleJit: .3 }], ['hair', 'شعر', { spacing: .15, angleJit: .1 }]]]
+];
+['brush', 'eraser'].forEach(k => Object.assign(S.opts[k], { tip: 'round', tipName: S.opts[k].tipName || 'دائري ناعم', angle: 0, roundness: 1, scatter: 0, sizeJit: 0, angleJit: 0 }, S.opts[k].tip ? {} : {}));
+const tipCacheX = new Map();
+function presetTip(kind, d) { const key = kind + '|' + d; if (tipCacheX.has(key)) return tipCacheX.get(key); if (tipCacheX.size > 40) tipCacheX.clear(); const c = TIPGEN.make(kind, d); tipCacheX.set(key, c); return c; }
+dabAt = (orig => function (x, y, pr) {
+  const k = P.kind, o = P.o;
+  if (!(k === 'brush' || k === 'eraser') || P.maskOf) return orig(x, y, pr);
+  const custom = (o.tip && o.tip !== 'round') || (o.roundness != null && o.roundness < 1) || o.scatter || o.sizeJit || o.angleJit || o.angle;
+  if (!custom) return orig(x, y, pr);
+  let size = o.size * (P.pressure ? clamp(pr * 1.6, .1, 1.4) : 1) * (1 - (o.sizeJit || 0) * Math.random());
+  const sc = (o.scatter || 0) * o.size; x += (Math.random() - .5) * 2 * sc; y += (Math.random() - .5) * 2 * sc;
+  const d = Math.max(2, Math.round(size)); const shape = o.tip === 'round' ? brushTip(d, o.hardness, 'rgba(0,0,0,1)') : presetTip(o.tip, Math.min(512, Math.max(8, Math.round(d / 8) * 8)));
+  const t = temp('ptip', d, d), tx = t.getContext('2d'); tx.clearRect(0, 0, d, d); tx.drawImage(shape, 0, 0, d, d); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = k === 'eraser' ? '#000' : rgba(S.fg, 1); tx.fillRect(0, 0, d, d); tx.globalCompositeOperation = 'source-over';
+  const bx = P.buf.getContext('2d'), ang = ((o.angle || 0) * Math.PI / 180) + (o.angleJit ? (Math.random() - .5) * 2 * Math.PI * o.angleJit : 0);
+  bx.save(); bx.globalAlpha = o.flow; bx.translate(x, y); bx.rotate(ang); bx.scale(1, o.roundness == null ? 1 : Math.max(.05, o.roundness)); bx.drawImage(t, -d / 2, -d / 2); bx.restore();
+})(dabAt);
+/* ---------- the picker ---------- */
+function tipPreview(kind, o, size = 34) { const c = mkCanvas(size, size), x = c.getContext('2d'); const s = kind === 'round' ? brushTip(size - 4, o.hardness ?? .8, 'rgba(230,230,230,1)') : (() => { const t = presetTip(kind, 64), k = mkCanvas(64, 64), kx = k.getContext('2d'); kx.drawImage(t, 0, 0); kx.globalCompositeOperation = 'source-in'; kx.fillStyle = '#e6e6e6'; kx.fillRect(0, 0, 64, 64); return k; })(); x.translate(size / 2, size / 2); x.rotate((o.angle || 0) * Math.PI / 180); x.scale(1, o.roundness ?? 1); x.drawImage(s, -(size - 4) / 2, -(size - 4) / 2, size - 4, size - 4); return c; }
+function strokePreview(kind, o) { const W = 220, H = 34, c = mkCanvas(W, H), x = c.getContext('2d'); const s = kind === 'round' ? brushTip(14, o.hardness ?? .8, 'rgba(230,230,230,1)') : (() => { const t = presetTip(kind, 32), k = mkCanvas(32, 32), kx = k.getContext('2d'); kx.drawImage(t, 0, 0); kx.globalCompositeOperation = 'source-in'; kx.fillStyle = '#e6e6e6'; kx.fillRect(0, 0, 32, 32); return k; })(); const step = Math.max(1.5, 14 * (o.spacing || .12)); for (let i = 10; i < W - 10; i += step) { const y = H / 2 + Math.sin(i / 28) * 7, sz = 14 * (1 - (o.sizeJit || 0) * Math.random()); x.save(); x.globalAlpha = o.flow ?? 1; x.translate(i + (Math.random() - .5) * (o.scatter || 0) * 14, y + (Math.random() - .5) * (o.scatter || 0) * 14); x.rotate(((o.angle || 0) * Math.PI / 180) + (o.angleJit ? (Math.random() - .5) * 6 * o.angleJit : 0)); x.drawImage(s, -sz / 2, -sz / 2, sz, sz); x.restore(); } return c; }
+function openBrushPicker(anchor) {
+  $$('.bpick').forEach(p => p.remove()); const k = S.tool === 'eraser' ? 'eraser' : 'brush', o = S.opts[k];
+  const p = document.createElement('div'); p.className = 'bpick'; p.innerHTML = `<div class="bp-top"><canvas id="bpAng" width="90" height="90" title="اسحب لتغيير الزاوية، والنقطتين لتغيير الاستدارة"></canvas><div class="bp-sl"><label>الحجم<input type="range" id="bpS" min="1" max="1000" value="${o.size}"><input type="number" id="bpSN" value="${o.size}"></label><label>الصلابة<input type="range" id="bpH" min="0" max="100" value="${Math.round(o.hardness * 100)}"><span id="bpHN">${Math.round(o.hardness * 100)}%</span></label><label>الزاوية<input type="range" id="bpA" min="-180" max="180" value="${o.angle || 0}"><span id="bpAN">${o.angle || 0}°</span></label><label>الاستدارة<input type="range" id="bpR" min="5" max="100" value="${Math.round((o.roundness ?? 1) * 100)}"><span id="bpRN">${Math.round((o.roundness ?? 1) * 100)}%</span></label></div></div><input type="search" id="bpQ" placeholder="بحث في الفرش…"><div class="bp-recent" id="bpRec"></div><div class="bp-list" id="bpL"></div>`;
+  document.body.appendChild(p); const r = anchor.getBoundingClientRect(); p.style.top = (r.bottom + 6) + 'px'; p.style.left = Math.max(8, Math.min(window.innerWidth - p.offsetWidth - 8, r.left)) + 'px';
+  const drawAng = () => { const c = $('#bpAng'), x = c.getContext('2d'); x.clearRect(0, 0, 90, 90); x.strokeStyle = '#888'; x.beginPath(); x.arc(45, 45, 40, 0, 7); x.stroke(); x.save(); x.translate(45, 45); x.rotate(-(o.angle || 0) * Math.PI / 180); x.strokeStyle = '#ddd'; x.beginPath(); x.moveTo(-42, 0); x.lineTo(46, 0); x.stroke(); x.fillStyle = '#ddd'; x.beginPath(); x.moveTo(46, 0); x.lineTo(38, -4); x.lineTo(38, 4); x.fill(); x.beginPath(); x.ellipse(0, 0, 30, 30 * (o.roundness ?? 1), 0, 0, 7); x.strokeStyle = '#2f9bff'; x.lineWidth = 2; x.stroke(); x.fillStyle = '#fff'; [-1, 1].forEach(s => { x.beginPath(); x.arc(0, s * 30 * (o.roundness ?? 1), 3.5, 0, 7); x.fill(); }); x.restore(); };
+  const sync = () => { $('#bpSN').value = o.size; $('#bpS').value = o.size; $('#bpHN').textContent = Math.round(o.hardness * 100) + '%'; $('#bpH').value = Math.round(o.hardness * 100); $('#bpAN').textContent = (o.angle || 0) + '°'; $('#bpA').value = o.angle || 0; $('#bpRN').textContent = Math.round((o.roundness ?? 1) * 100) + '%'; $('#bpR').value = Math.round((o.roundness ?? 1) * 100); drawAng(); UI.buildOptbar(); };
+  $('#bpS').oninput = e => { o.size = +e.target.value; sync(); }; $('#bpSN').onchange = e => { o.size = clamp(+e.target.value, 1, 5000); sync(); };
+  $('#bpH').oninput = e => { o.hardness = +e.target.value / 100; sync(); }; $('#bpA').oninput = e => { o.angle = +e.target.value; sync(); }; $('#bpR').oninput = e => { o.roundness = +e.target.value / 100; sync(); };
+  const ac = $('#bpAng'); ac.onpointerdown = e => { ac.setPointerCapture(e.pointerId); const mv = ev => { const b = ac.getBoundingClientRect(), dx = ev.clientX - b.left - 45, dy = ev.clientY - b.top - 45; const near = Math.abs(Math.hypot(dx, dy) - 30 * (o.roundness ?? 1)) < 8 && Math.abs(Math.atan2(dy, dx) * 180 / Math.PI + (o.angle || 0)) % 180 > 60; if (ev.shiftKey || near) o.roundness = clamp(Math.hypot(dx, dy) / 30, .05, 1); else o.angle = Math.round(-Math.atan2(dy, dx) * 180 / Math.PI); sync(); }; mv(e); ac.onpointermove = mv; ac.onpointerup = () => ac.onpointermove = null; };
+  const apply = (kind, name, pr) => { Object.assign(o, { tip: kind, tipName: name, angle: 0, roundness: 1, scatter: 0, sizeJit: 0, angleJit: 0, spacing: .12, flow: 1 }, pr); if (kind !== 'round' && pr.hardness == null) o.hardness = .9; let rec = []; try { rec = JSON.parse(LS.get('naqsh.brushRec') || '[]'); } catch { } rec = [[kind, name, pr], ...rec.filter(x => x[1] !== name)].slice(0, 8); LS.set('naqsh.brushRec', JSON.stringify(rec)); sync(); draw(); toast('الفرشاة: ' + name); };
+  const item = (kind, name, pr) => { const b = document.createElement('button'); b.className = 'bp-item' + (o.tipName === name ? ' on' : ''); b.title = name; b.append(tipPreview(kind, pr)); const n = document.createElement('span'); n.textContent = name; b.append(n, strokePreview(kind, pr)); b.onclick = () => apply(kind, name, pr); return b; };
+  const draw = () => { const q = ($('#bpQ').value || '').trim(), L = $('#bpL'); L.innerHTML = ''; const rb = $('#bpRec'); rb.innerHTML = ''; let rec = []; try { rec = JSON.parse(LS.get('naqsh.brushRec') || '[]'); } catch { } rec.forEach(([k2, n, pr]) => { const b = document.createElement('button'); b.className = 'bp-mini'; b.title = n; b.append(tipPreview(k2, pr, 28)); b.onclick = () => apply(k2, n, pr); rb.appendChild(b); });
+    BRUSH_SETS.forEach(([folder, items]) => { const list = items.filter(([, n]) => !q || n.includes(q) || folder.toLowerCase().includes(q.toLowerCase())); if (!list.length) return; const f = document.createElement('details'); f.open = !!q || folder === (openBrushPicker.open || BRUSH_SETS[0][0]); f.innerHTML = `<summary>📁 ${folder}</summary>`; f.ontoggle = () => { if (f.open) openBrushPicker.open = folder; }; const g = document.createElement('div'); g.className = 'bp-grid'; list.forEach(([k2, n, pr]) => g.appendChild(item(k2, n, pr))); f.appendChild(g); L.appendChild(f); }); };
+  $('#bpQ').oninput = draw; draw(); drawAng();
+  setTimeout(() => document.addEventListener('pointerdown', function h(e) { if (!e.target.closest('.bpick') && e.target !== anchor && !anchor.contains(e.target)) { p.remove(); document.removeEventListener('pointerdown', h); } }), 0);
+}
+UI.buildOptbar = (orig => function () {
+  orig.call(UI); if (TF.active || !['brush', 'eraser'].includes(S.tool)) return; const o = S.opts[S.tool], bar = $('#optbar');
+  const b = document.createElement('button'); b.className = 'bp-btn'; b.title = 'منتقي إعدادات الفرشاة المسبقة'; b.setAttribute('aria-label', 'منتقي الفرش'); b.append(tipPreview(o.tip || 'round', o, 26)); const s = document.createElement('span'); s.textContent = o.size; b.append(s, document.createTextNode('▾')); b.onclick = () => openBrushPicker(b);
+  const anchor = bar.querySelector('.ob-sep'); anchor ? anchor.after(b) : bar.prepend(b);
+  const n = document.createElement('span'); n.className = 'ctl'; n.textContent = o.tipName || ''; b.after(n);
+  if (o.tip !== 'round' || o.scatter) bar.appendChild(ctlRange('التبعثر', o, 'scatter', 0, 2, .01, pct));
+})(UI.buildOptbar);
+/* [ and ] already change size; F5 opens the brushes like Photoshop */
+document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; if (e.key === 'F5' && !e.shiftKey && ['brush', 'eraser'].includes(S.tool)) { e.preventDefault(); const b = $('.bp-btn'); b && openBrushPicker(b); } }, true);
+(() => { const W = MENUS.find(m => m[0] === 'نافذة'); if (W) W[1].splice(1, 0, ['الفرش (Brushes)', 'F5', () => { pickTool('brush'); setTimeout(() => { const b = $('.bp-btn'); b && openBrushPicker(b); }, 50); }]); })();
+/* ============================== Everything from the skin-retouch video: full blend modes, Ctrl+I, High Pass, mask shortcuts, full Filter menu ============================== */
+/* ---------- all 27 Photoshop blend modes ---------- */
+const PS_BLENDS = [['source-over', 'عادي (Normal)'], ['dissolve', 'تحلّل (Dissolve)'], '-', ['darken', 'تغميق (Darken)'], ['multiply', 'ضرب (Multiply)'], ['color-burn', 'حرق لوني (Color Burn)'], ['linear-burn', 'حرق خطي (Linear Burn)'], ['darker-color', 'لون أغمق (Darker Color)'], '-', ['lighten', 'تفتيح (Lighten)'], ['screen', 'شاشة (Screen)'], ['color-dodge', 'مراوغة لونية (Color Dodge)'], ['lighter', 'مراوغة خطية/إضافة (Linear Dodge)'], ['lighter-color', 'لون أفتح (Lighter Color)'], '-', ['overlay', 'تراكب (Overlay)'], ['soft-light', 'ضوء ناعم (Soft Light)'], ['hard-light', 'ضوء ساطع (Hard Light)'], ['vivid-light', 'ضوء حيوي (Vivid Light)'], ['linear-light', 'ضوء خطي (Linear Light)'], ['pin-light', 'ضوء نقطي (Pin Light)'], ['hard-mix', 'مزج صلب (Hard Mix)'], '-', ['difference', 'فرق (Difference)'], ['exclusion', 'استبعاد (Exclusion)'], ['subtract', 'طرح (Subtract)'], ['divide', 'قسمة (Divide)'], '-', ['hue', 'درجة اللون (Hue)'], ['saturation', 'تشبع (Saturation)'], ['color', 'لون (Color)'], ['luminosity', 'إضاءة (Luminosity)']];
+BLENDS.length = 0; PS_BLENDS.forEach(b => { if (b !== '-') BLENDS.push(b); });
+const CUSTOM_BLEND = {
+  'linear-burn': (b, s) => b + s - 255,
+  'vivid-light': (b, s) => s <= 127.5 ? (s <= 0 ? 0 : 255 - (255 - b) * 255 / (2 * s)) : (s >= 255 ? 255 : b * 255 / (2 * (255 - s))),
+  'linear-light': (b, s) => b + 2 * s - 255,
+  'pin-light': (b, s) => s < 127.5 ? Math.min(b, 2 * s) : Math.max(b, 2 * s - 255),
+  'hard-mix': (b, s) => (b + s >= 255 ? 255 : 0),
+  'subtract': (b, s) => b - s,
+  'divide': (b, s) => (s <= 0 ? 255 : b * 255 / s)
+};
+const PIXEL_BLEND = new Set([...Object.keys(CUSTOM_BLEND), 'darker-color', 'lighter-color', 'dissolve']);
+/* render the layer alone, then mix it into what's below pixel by pixel */
+drawLayer = (orig => function (ctx, L, alpha, gco) {
+  if (!PIXEL_BLEND.has(gco)) return orig(ctx, L, alpha, gco);
+  const w = ctx.canvas.width, h = ctx.canvas.height; const tr = ctx.getTransform();
+  if (w !== S.doc.w || h !== S.doc.h || tr.a !== 1 || tr.d !== 1) return orig(ctx, L, alpha, 'source-over'); /* thumbnails */
+  const t = temp('pxblend', w, h), tx = t.getContext('2d'); tx.clearRect(0, 0, w, h); orig(tx, L, 1, 'source-over');
+  const top = tx.getImageData(0, 0, w, h).data, baseId = ctx.getImageData(0, 0, w, h), b = baseId.data, f = CUSTOM_BLEND[gco];
+  for (let i = 0; i < b.length; i += 4) {
+    const ta = top[i + 3] / 255 * alpha; if (!ta) continue;
+    if (gco === 'dissolve') { if (Math.random() < ta) { b[i] = top[i]; b[i + 1] = top[i + 1]; b[i + 2] = top[i + 2]; b[i + 3] = 255; } continue; }
+    const ba = b[i + 3] / 255; let r, g, bl;
+    if (f) { r = f(b[i], top[i]); g = f(b[i + 1], top[i + 1]); bl = f(b[i + 2], top[i + 2]); }
+    else { const lb = b[i] * .3 + b[i + 1] * .59 + b[i + 2] * .11, lt = top[i] * .3 + top[i + 1] * .59 + top[i + 2] * .11; const useTop = gco === 'darker-color' ? lt < lb : lt > lb; r = useTop ? top[i] : b[i]; g = useTop ? top[i + 1] : b[i + 1]; bl = useTop ? top[i + 2] : b[i + 2]; }
+    /* where nothing is below, show the layer itself */
+    const k = ta * ba; const outA = ta + ba * (1 - ta);
+    for (let c = 0; c < 3; c++) { const mix = [r, g, bl][c] < 0 ? 0 : [r, g, bl][c] > 255 ? 255 : [r, g, bl][c]; const val = (mix * k + top[i + c] * ta * (1 - ba) + b[i + c] * ba * (1 - ta)) / (outA || 1); b[i + c] = val; }
+    b[i + 3] = outA * 255;
+  }
+  ctx.putImageData(baseId, 0, 0);
+})(drawLayer);
+/* blend dropdown with Photoshop-style separators */
+PANELS.layers = (orig => function (b) { orig.call(this, b); const s = $('#lBlend'); if (!s) return; const v = s.value; s.innerHTML = PS_BLENDS.map(x => x === '-' ? '<option disabled>──────────</option>' : `<option value="${x[0]}">${x[1]}</option>`).join(''); s.value = v; const mb = [...$$('#lpFoot button')].find(x => x.title === 'إضافة قناع طبقة'); if (mb) { mb.title = 'إضافة قناع طبقة (Alt+نقر: قناع أسود يخفي الكل)'; mb.onclick = e => addMask(e.altKey); } })(PANELS.layers);
+/* keep the hover preview of blend modes like Photoshop: scrolling the list updates live */
+document.addEventListener('change', e => { if (e.target.id === 'lBlend') requestRender(); });
+
+/* ---------- Ctrl+I = invert (layer, or the mask when editing it) ---------- */
+function invertActive() {
+  const L = activeLayer(); if (!L) return;
+  if (L._mask && (L.maskEdit || L.type === 'adj')) return maskOp('inv');
+  if (L.type === 'adj') return toast('اختر طبقة صورة');
+  if (L.type === 'text') rasterize(L); applyToLayer(L, cloneCanvas(L.canvas), c => runAdj('invert', c, {})); requestRender(); commit('عكس الألوان');
+}
+document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'i') { e.preventDefault(); e.stopImmediatePropagation(); invertActive(); toast('Ctrl+I — عكس', 1000); } }, true);
+/* Alt+click the mask icon in the layer row already exists for thumbnails; the add-mask button above handles Alt. */
+
+/* ---------- more real Photoshop filters (Other / Noise / Blur / Sharpen / Stylize / Pixelate / Render) ---------- */
+function boxBlurId(id, r) { FILTERS.blurImageData(id, r); }
+function rankFilter(id, r, mode) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data; r = Math.max(1, Math.round(r));
+  /* separable min/max */ const tmp = new Uint8ClampedArray(s.length), pick = mode === 'max' ? Math.max : Math.min;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 3; c++) { let v = s[(y * w + x) * 4 + c]; for (let k = -r; k <= r; k++) { const xx = Math.min(w - 1, Math.max(0, x + k)); v = pick(v, s[(y * w + xx) * 4 + c]); } tmp[(y * w + x) * 4 + c] = v; }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 3; c++) { let v = tmp[(y * w + x) * 4 + c]; for (let k = -r; k <= r; k++) { const yy = Math.min(h - 1, Math.max(0, y + k)); v = pick(v, tmp[(yy * w + x) * 4 + c]); } d[(y * w + x) * 4 + c] = v; } }
+function medianId(id, r) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data; r = Math.max(1, Math.round(r)); const vals = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let c = 0; c < 3; c++) { vals.length = 0; for (let j = -r; j <= r; j += r > 2 ? 2 : 1) for (let i = -r; i <= r; i += r > 2 ? 2 : 1) { const xx = Math.min(w - 1, Math.max(0, x + i)), yy = Math.min(h - 1, Math.max(0, y + j)); vals.push(s[(yy * w + xx) * 4 + c]); } vals.sort((a, b) => a - b); d[(y * w + x) * 4 + c] = vals[vals.length >> 1]; } }
+Object.assign(ADJ, {
+  highpass: { n: 'تمرير عالٍ (High Pass)', g: 'oth', p: [['r', 'نصف القطر', 1, 250, 10, .1]], f(id, p) { const b = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); boxBlurId(b, p.r); const d = id.data; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) d[i + c] = clamp(d[i + c] - b.data[i + c] + 128, 0, 255); } },
+  minimum: { n: 'الحد الأدنى (Minimum)', g: 'oth', p: [['r', 'نصف القطر', 1, 20, 2]], f(id, p) { rankFilter(id, p.r, 'min'); } },
+  maximum: { n: 'الحد الأقصى (Maximum)', g: 'oth', p: [['r', 'نصف القطر', 1, 20, 2]], f(id, p) { rankFilter(id, p.r, 'max'); } },
+  offset: { n: 'إزاحة (Offset)', g: 'oth', p: [['x', 'أفقي %', -100, 100, 50], ['y', 'عمودي %', -100, 100, 0]], f(id, p) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data, ox = Math.round(w * p.x / 100), oy = Math.round(h * p.y / 100); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const sx = ((x - ox) % w + w) % w, sy = ((y - oy) % h + h) % h, i = (y * w + x) * 4, j = (sy * w + sx) * 4; d[i] = s[j]; d[i + 1] = s[j + 1]; d[i + 2] = s[j + 2]; d[i + 3] = s[j + 3]; } } },
+  median: { n: 'الوسيط (Median)', g: 'nse', p: [['r', 'نصف القطر', 1, 8, 2]], f(id, p) { medianId(id, p.r); } },
+  dust: { n: 'الغبار والخدوش (Dust & Scratches)', g: 'nse', p: [['r', 'نصف القطر', 1, 8, 2], ['t', 'العتبة', 0, 128, 20]], f(id, p) { const m = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); medianId(m, p.r); const d = id.data; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) if (Math.abs(d[i + c] - m.data[i + c]) > p.t) d[i + c] = m.data[i + c]; } },
+  denoise: { n: 'تقليل التشويش (Reduce Noise)', g: 'nse', p: [['s', 'القوة', 1, 10, 5], ['keep', 'الحفاظ على التفاصيل %', 0, 100, 40]], f(id, p) { const b = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); boxBlurId(b, p.s * .6); const d = id.data, th = 6 + (100 - p.keep) * .5; for (let i = 0; i < d.length; i += 4) { const df = Math.abs(d[i] - b.data[i]) + Math.abs(d[i + 1] - b.data[i + 1]) + Math.abs(d[i + 2] - b.data[i + 2]); const f = Math.max(0, 1 - df / (th * 3)); for (let c = 0; c < 3; c++) d[i + c] = lerp(d[i + c], b.data[i + c], f); } } },
+  despeckle: { n: 'إزالة النقط (Despeckle)', g: 'nse', p: [], f(id) { medianId(id, 1); } },
+  surface: { n: 'تمويه السطح (Surface Blur)', g: 'blr', p: [['r', 'نصف القطر', 1, 60, 8], ['t', 'العتبة', 2, 100, 15]], f(id, p) { const b = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); boxBlurId(b, p.r); const d = id.data; for (let i = 0; i < d.length; i += 4) { const df = (Math.abs(d[i] - b.data[i]) + Math.abs(d[i + 1] - b.data[i + 1]) + Math.abs(d[i + 2] - b.data[i + 2])) / 3; const f = Math.max(0, 1 - df / p.t); for (let c = 0; c < 3; c++) d[i + c] = lerp(d[i + c], b.data[i + c], f); } } },
+  boxblur: { n: 'تمويه مربع (Box Blur)', g: 'blr', p: [['r', 'نصف القطر', 1, 100, 6]], f(id, p) { boxBlurId(id, p.r); } },
+  unsharp: { n: 'قناع إزالة الحدة (Unsharp Mask)', g: 'shp', p: [['amount', 'المقدار %', 1, 500, 120], ['r', 'نصف القطر', .5, 30, 1.5, .1], ['t', 'العتبة', 0, 60, 2]], f(id, p) { const b = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); boxBlurId(b, p.r); const d = id.data, a = p.amount / 100; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) { const df = d[i + c] - b.data[i + c]; if (Math.abs(df) > p.t) d[i + c] = clamp(d[i + c] + df * a, 0, 255); } } },
+  smartsharp: { n: 'زيادة الحدة الذكية (Smart Sharpen)', g: 'shp', p: [['amount', 'المقدار %', 1, 400, 150], ['r', 'نصف القطر', .5, 10, 1, .1], ['nr', 'تقليل التشويش %', 0, 100, 20]], f(id, p) { const b = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); boxBlurId(b, p.r); const d = id.data, a = p.amount / 100, th = p.nr / 4; for (let i = 0; i < d.length; i += 4) { const l = Math.abs(d[i] - b.data[i]) + Math.abs(d[i + 1] - b.data[i + 1]) + Math.abs(d[i + 2] - b.data[i + 2]); if (l / 3 < th) continue; for (let c = 0; c < 3; c++) d[i + c] = clamp(d[i + c] + (d[i + c] - b.data[i + c]) * a, 0, 255); } } },
+  diffuse: { n: 'انتشار (Diffuse)', g: 'sty', p: [['r', 'المدى', 1, 10, 2]], f(id, p) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const sx = clamp(x + Math.round((Math.random() - .5) * 2 * p.r), 0, w - 1), sy = clamp(y + Math.round((Math.random() - .5) * 2 * p.r), 0, h - 1), i = (y * w + x) * 4, j = (sy * w + sx) * 4; for (let c = 0; c < 4; c++) d[i + c] = s[j + c]; } } },
+  tiles: { n: 'بلاط (Tiles)', g: 'sty', p: [['n', 'عدد البلاطات', 2, 40, 10], ['o', 'الإزاحة %', 0, 40, 10]], f(id, p) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data, ts = Math.max(4, Math.round(Math.min(w, h) / p.n)); d.fill(255); for (let ty = 0; ty < h; ty += ts) for (let tx = 0; tx < w; tx += ts) { const ox = Math.round((Math.random() - .5) * ts * p.o / 50), oy = Math.round((Math.random() - .5) * ts * p.o / 50); for (let y = ty; y < Math.min(h, ty + ts); y++) for (let x = tx; x < Math.min(w, tx + ts); x++) { const X = x + ox, Y = y + oy; if (X < 0 || Y < 0 || X >= w || Y >= h) continue; const i = (Y * w + X) * 4, j = (y * w + x) * 4; for (let c = 0; c < 4; c++) d[i + c] = s[j + c]; } } } },
+  crystal: { n: 'تبلور (Crystallize)', g: 'pix', p: [['s', 'حجم الخلية', 4, 120, 20]], f(id, p) { const w = id.width, h = id.height, s = new Uint8ClampedArray(id.data), d = id.data, g = p.s, cols = Math.ceil(w / g), rows = Math.ceil(h / g), pts = []; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) pts.push([Math.min(w - 1, Math.floor((i + Math.random()) * g)), Math.min(h - 1, Math.floor((j + Math.random()) * g))]); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const ci = Math.floor(x / g), cj = Math.floor(y / g); let best = 1e9, bp = null; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = ci + di, jj = cj + dj; if (ii < 0 || jj < 0 || ii >= cols || jj >= rows) continue; const q = pts[jj * cols + ii], dd = (q[0] - x) ** 2 + (q[1] - y) ** 2; if (dd < best) { best = dd; bp = q; } } const i = (y * w + x) * 4, j = (bp[1] * w + bp[0]) * 4; for (let c = 0; c < 4; c++) d[i + c] = s[j + c]; } } },
+  diffclouds: { n: 'سحب الفرق (Difference Clouds)', g: 'rnd', p: [['scale', 'الحجم', 10, 400, 120]], f(id, p) { const c = new ImageData(new Uint8ClampedArray(id.data), id.width, id.height); ADJ.clouds.f(c, { scale: p.scale, seed: Math.floor(Math.random() * 900) }); const d = id.data; for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.abs(d[i + k] - c.data[i + k]); } },
+  fibers: { n: 'ألياف (Fibers)', g: 'rnd', p: [['v', 'التباين', 1, 64, 16]], f(id, p) { const w = id.width, h = id.height, d = id.data, A = S.fg, B = S.bg; for (let x = 0; x < w; x++) { let v = Math.random(); for (let y = 0; y < h; y++) { v = clamp(v + (Math.random() - .5) * p.v / 200, 0, 1); const i = (y * w + x) * 4; d[i] = lerp(A.r, B.r, v); d[i + 1] = lerp(A.g, B.g, v); d[i + 2] = lerp(A.b, B.b, v); d[i + 3] = 255; } } } }
+});
+['highpass', 'minimum', 'maximum', 'offset', 'median', 'dust', 'denoise', 'despeckle', 'surface', 'boxblur', 'unsharp', 'smartsharp', 'diffuse', 'tiles', 'crystal', 'diffclouds', 'fibers'].forEach(k => { if (!ADJ_KEYS.includes(k)) ADJ_KEYS.push(k); });
+
+/* ---------- Last Filter (Ctrl+Alt+F) ---------- */
+let RA_LAST = null, LASTF = null;
+runAdj = (orig => function (k, c, p) { RA_LAST = { k, p: { ...(p || {}) } }; return orig(k, c, p); })(runAdj);
+commit = (orig => function (label) { if (RA_LAST && ADJ[RA_LAST.k] && label === ADJ[RA_LAST.k].n) LASTF = RA_LAST; orig(label); })(commit);
+function lastFilter() { if (!LASTF) return toast('لم تستخدم أي فلتر بعد'); const L = photoLayer(); if (!L || L.type === 'adj') return; if (L.type === 'text') rasterize(L); const f = LASTF; applyToLayer(L, cloneCanvas(L.canvas), c => runAdj(f.k, c, f.p)); requestRender(); commit(ADJ[f.k].n); appliedFx(null, ADJ[f.k].n); }
+
+/* ---------- Camera Raw Filter ---------- */
+DLG.cameraRaw = function () {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('اختر طبقة صورة'); if (L.type === 'text') rasterize(L); const base = cloneCanvas(L.canvas);
+  const SL = [['أساسي', [['temp', 'الحرارة', -100, 100], ['tint', 'الصبغة', -100, 100], ['exp', 'التعريض', -100, 100], ['ct', 'التباين', -100, 100], ['hi', 'الإضاءات', -100, 100], ['sh', 'الظلال', -100, 100], ['wh', 'الأبيض', -100, 100], ['bk', 'الأسود', -100, 100]]], ['الحضور', [['tex', 'الملمس', -100, 100], ['clar', 'الوضوح', -100, 100], ['dehaze', 'إزالة الضباب', -100, 100], ['vib', 'الحيوية', -100, 100], ['sat', 'التشبع', -100, 100]]], ['تأثيرات', [['vig', 'تظليل الأطراف', -100, 100], ['grain', 'الحبيبات', 0, 100]]]];
+  const v = {}; SL.forEach(([, a]) => a.forEach(s => v[s[0]] = 0));
+  const body = document.createElement('div'); body.className = 'craw'; body.innerHTML = `<div class="note">مثل فلتر Camera Raw: كل التعديلات الأساسية في مكان واحد، والنتيجة تظهر مباشرة على الصورة.</div>` + SL.map(([t, a]) => `<div class="subhead">${t}</div>` + a.map(([k, n, mn, mx]) => `<label class="prop">${n}<input type="range" data-k="${k}" min="${mn}" max="${mx}" value="0"><output>0</output></label>`).join('')).join('');
+  let raf = 0; const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { applyToLayer(L, base, c => {
+    if (v.temp || v.tint) runAdj('temp', c, { temp: v.temp * .6, tint: v.tint * .5 });
+    if (v.exp || v.ct) runAdj('brightness', c, { brightness: v.exp * .6, contrast: v.ct * .6 });
+    if (v.hi || v.sh) runAdj('shadows', c, { shadows: v.sh, highlights: v.hi });
+    if (v.wh || v.bk) runAdj('levels', c, { black: Math.max(0, v.bk * .4), white: 255 - Math.max(0, v.wh * .4), gamma: 1 + (-v.bk + v.wh) * .002 });
+    if (v.dehaze) { const id = c.getContext('2d').getImageData(0, 0, c.width, c.height), d = id.data, k = v.dehaze / 100; for (let i = 0; i < d.length; i += 4) { const mn = Math.min(d[i], d[i + 1], d[i + 2]); for (let q = 0; q < 3; q++) d[i + q] = clamp((d[i + q] - mn * k * .6) / (1 - k * .35), 0, 255); } c.getContext('2d').putImageData(id, 0, 0); }
+    if (v.vib || v.sat) runAdj('vibrance', c, { vib: v.vib, sat: v.sat });
+    if (v.clar) runAdj('unsharp', c, { amount: Math.abs(v.clar) * 1.2 * Math.sign(v.clar) || 1, r: Math.max(2, Math.min(c.width, c.height) * .01), t: 0 });
+    if (v.tex) runAdj(v.tex > 0 ? 'sharpen' : 'surface', c, v.tex > 0 ? { amount: v.tex, r: 1 } : { r: 3, t: -v.tex / 3 });
+    if (v.vig) runAdj('vignette', c, { amount: Math.abs(v.vig), size: 55, soft: 60 });
+    if (v.grain) runAdj('noise', c, { amount: v.grain * .4, mono: 1 });
+  }); requestRender(); }); };
+  $$('input', body).forEach(i => i.oninput = () => { v[i.dataset.k] = +i.value; i.nextElementSibling.textContent = i.value; run(); });
+  const cancel = () => { L.canvas = base; touch(L); requestRender(); this.close(); }; this.onClose = cancel;
+  this.open('فلتر Camera Raw', body, [btn('موافق', () => { this.onClose = null; this.close(); commit('Camera Raw'); appliedFx(null, 'Camera Raw'); }, 'btn primary'), btn('إعادة ضبط', () => { $$('input', body).forEach(i => { i.value = 0; i.nextElementSibling.textContent = 0; v[i.dataset.k] = 0; }); run(); }), btn('إلغاء', cancel)], 'narrow', true);
+};
+
+/* ---------- Lens Correction & Adaptive Wide Angle ---------- */
+DLG.lens = function (title = 'تصحيح العدسة') {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('اختر طبقة صورة'); if (L.type === 'text') rasterize(L); const base = cloneCanvas(L.canvas); const v = { dist: 0, ca: 0, vig: 0, rot: 0, scale: 100 };
+  const body = document.createElement('div'); body.style.cssText = 'display:flex;flex-direction:column;gap:10px'; body.innerHTML = `<label class="prop">إزالة التشوه (برميلي ↔ وسادي)<input type="range" data-k="dist" min="-100" max="100" value="0"><output>0</output></label><label class="prop">الانحراف اللوني (حواف ملونة)<input type="range" data-k="ca" min="-100" max="100" value="0"><output>0</output></label><label class="prop">تظليل العدسة<input type="range" data-k="vig" min="-100" max="100" value="0"><output>0</output></label><label class="prop">الزاوية<input type="range" data-k="rot" min="-20" max="20" step=".1" value="0"><output>0</output></label><label class="prop">المقياس %<input type="range" data-k="scale" min="50" max="150" value="100"><output>100</output></label>`;
+  let raf = 0; const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { applyToLayer(L, base, c => { const x = c.getContext('2d'), w = c.width, h = c.height, id = x.getImageData(0, 0, w, h), src = new Uint8ClampedArray(id.data), d = id.data, cx = w / 2, cy = h / 2, R = Math.hypot(cx, cy), k = v.dist / 100 * .35, ca = v.ca / 100 * .006, sc = 100 / v.scale, a = -v.rot * Math.PI / 180, co = Math.cos(a), si = Math.sin(a), o = [0, 0, 0, 0];
+    for (let y = 0; y < h; y++) for (let X = 0; X < w; X++) { let dx = (X - cx) * sc, dy = (y - cy) * sc; const rx = dx * co - dy * si, ry = dx * si + dy * co; const r2 = (rx * rx + ry * ry) / (R * R), f = 1 + k * r2, i = (y * w + X) * 4; for (let ch = 0; ch < 3; ch++) { const ff = f * (1 + (ch - 1) * ca); bilinear(src, w, h, cx + rx * ff, cy + ry * ff, o, 0); d[i + ch] = o[ch]; } bilinear(src, w, h, cx + rx * f, cy + ry * f, o, 0); d[i + 3] = o[3]; if (v.vig) { const vf = 1 + v.vig / 100 * r2 * 1.2; d[i] = clamp(d[i] * vf, 0, 255); d[i + 1] = clamp(d[i + 1] * vf, 0, 255); d[i + 2] = clamp(d[i + 2] * vf, 0, 255); } }
+    x.putImageData(id, 0, 0); }); requestRender(); }); };
+  $$('input', body).forEach(i => i.oninput = () => { v[i.dataset.k] = +i.value; i.nextElementSibling.textContent = i.value; run(); });
+  const cancel = () => { L.canvas = base; touch(L); requestRender(); this.close(); }; this.onClose = cancel;
+  this.open(title, body, [btn('موافق', () => { this.onClose = null; this.close(); commit(title); appliedFx(null, title); }, 'btn primary'), btn('إلغاء', cancel)], 'narrow', true);
+};
+
+/* ---------- Neural Filters (real algorithms that run in the browser) ---------- */
+DLG.neural = function () {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('اختر طبقة صورة');
+  const items = [['skin', '🧴 تنعيم البشرة', 'يزيل الحبوب والبقع ويحافظ على الملمس'], ['zoom', '🔍 التكبير الفائق ×2', 'يضاعف دقة الصورة مع زيادة الحدة'], ['jpeg', '🧹 إزالة تشوهات JPEG', 'يزيل المربعات والتشويش من الصور المضغوطة'], ['transfer', '🎨 نقل الألوان من صورة', 'يطبق ألوان صورة أخرى على صورتك'], ['harmony', '🤝 التناغم مع الخلفية', 'يطابق ألوان الطبقة مع الطبقة التي تحتها'], ['colorize', '🖌 تلوين الأبيض والأسود', 'يضيف ألواناً دافئة طبيعية لصورة رمادية (تقريبي)']];
+  const body = document.createElement('div'); body.className = 'neural'; body.innerHTML = '<div class="note">فلاتر ذكية تعمل داخل المتصفح بدون إنترنت.</div>' + items.map(([k, n, d]) => `<button class="btn" data-k="${k}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:start"><b>${n}</b><small style="color:var(--muted)">${d}</small></button>`).join('');
+  this.open('الفلاتر العصبية', body, [btn('إغلاق', () => this.close())], 'narrow');
+  $$('button[data-k]', body).forEach(b => b.onclick = () => { const k = b.dataset.k; this.close(); NEURAL[k](L); });
+};
+function colorStats(d) { let n = 0; const m = [0, 0, 0], s = [0, 0, 0]; for (let i = 0; i < d.length; i += 8) { if (d[i + 3] < 20) continue; const l = rgb2lab(d[i], d[i + 1], d[i + 2]); for (let c = 0; c < 3; c++) { m[c] += l[c]; s[c] += l[c] * l[c]; } n++; } n = n || 1; return m.map((v, c) => [v / n, Math.sqrt(Math.max(1e-6, s[c] / n - (v / n) ** 2))]); }
+function rgb2lab(r, g, b) { const l = .3811 * r + .5783 * g + .0402 * b, m = .1967 * r + .7244 * g + .0782 * b, s = .0241 * r + .1288 * g + .8444 * b; const L = Math.log10(Math.max(l, 1)), M = Math.log10(Math.max(m, 1)), Sx = Math.log10(Math.max(s, 1)); return [(L + M + Sx) / Math.sqrt(3), (L + M - 2 * Sx) / Math.sqrt(6), (L - M) / Math.SQRT2]; }
+function lab2rgb(a) { const L = a[0] / Math.sqrt(3) + a[1] / Math.sqrt(6) + a[2] / Math.SQRT2, M = a[0] / Math.sqrt(3) + a[1] / Math.sqrt(6) - a[2] / Math.SQRT2, Sx = a[0] / Math.sqrt(3) - 2 * a[1] / Math.sqrt(6); const l = 10 ** L, m = 10 ** M, s = 10 ** Sx; return [4.4679 * l - 3.5873 * m + .1193 * s, -1.2186 * l + 2.3809 * m - .1624 * s, .0497 * l - .2439 * m + 1.2045 * s]; }
+function colorTransfer(L, refData, amount = 1) { const ts = colorStats(L.canvas.getContext('2d').getImageData(0, 0, L.canvas.width, L.canvas.height).data), rs = colorStats(refData); applyToLayer(L, cloneCanvas(L.canvas), c => { const x = c.getContext('2d'), id = x.getImageData(0, 0, c.width, c.height), d = id.data; for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const l = rgb2lab(d[i], d[i + 1], d[i + 2]); for (let q = 0; q < 3; q++) l[q] = (l[q] - ts[q][0]) * (rs[q][1] / ts[q][1]) + rs[q][0]; const o = lab2rgb(l); for (let q = 0; q < 3; q++) d[i + q] = lerp(d[i + q], clamp(o[q], 0, 255), amount); } x.putImageData(id, 0, 0); }); }
+const NEURAL = {
+  skin(L) { openPanel('beauty'); setTimeout(() => $('#btAuto') && $('#btAuto').click(), 100); },
+  zoom(L) { if (L.type === 'text') rasterize(L); const c = mkCanvas(L.canvas.width * 2, L.canvas.height * 2), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(L.canvas, 0, 0, c.width, c.height); runAdj('unsharp', c, { amount: 80, r: 1.2, t: 2 }); if (L.x === 0 && L.y === 0 && L.canvas.width === S.doc.w && S.layers.length === 1) { const n = S.doc.name; newDocument(c.width, c.height, 'transparent', n, true); S.layers[0].canvas = c; touch(S.layers[0]); fitView(); } else { L.canvas = c; L.x -= c.width / 4; L.y -= c.height / 4; touch(L); } requestRender(); commit('تكبير فائق'); toast('✓ تمت مضاعفة الدقة'); },
+  jpeg(L) { if (L.type === 'text') rasterize(L); applyToLayer(L, cloneCanvas(L.canvas), c => { runAdj('surface', c, { r: 2, t: 10 }); runAdj('unsharp', c, { amount: 40, r: 1, t: 3 }); }); requestRender(); commit('إزالة تشوهات JPEG'); appliedFx(null, 'إزالة تشوهات JPEG'); },
+  transfer(L) { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { const f = i.files[0]; if (!f) return; const img = await blobToImage(f); const c = mkCanvas(Math.min(600, img.naturalWidth), Math.round(Math.min(600, img.naturalWidth) * img.naturalHeight / img.naturalWidth)); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); colorTransfer(L, c.getContext('2d').getImageData(0, 0, c.width, c.height).data); requestRender(); commit('نقل الألوان'); appliedFx(null, 'نقل الألوان'); }; toast('اختر الصورة التي تريد أخذ ألوانها'); i.click(); },
+  harmony(L) { const i = S.layers.indexOf(L), B = S.layers.slice(0, i).reverse().find(l => l.type === 'raster' && l.visible); if (!B) return toast('لا توجد طبقة صورة تحتها'); colorTransfer(L, B.canvas.getContext('2d').getImageData(0, 0, B.canvas.width, B.canvas.height).data, .6); requestRender(); commit('تناغم'); appliedFx(null, 'تناغم'); },
+  colorize(L) { if (L.type === 'text') rasterize(L); applyToLayer(L, cloneCanvas(L.canvas), c => { const x = c.getContext('2d'), id = x.getImageData(0, 0, c.width, c.height), d = id.data; for (let i = 0; i < d.length; i += 4) { const l = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) / 255, sk = l > .35 && l < .85 ? 1 - Math.abs(l - .6) * 3 : 0; const r = l * 255 * (1 + .12 * sk) + 8, g = l * 255 * (1 + .02 * sk), b = l * 255 * (1 - .1 * sk) + (1 - l) * 18; d[i] = clamp(r, 0, 255); d[i + 1] = clamp(g, 0, 255); d[i + 2] = clamp(b, 0, 255); } x.putImageData(id, 0, 0); }); requestRender(); commit('تلوين'); appliedFx(null, 'تلوين'); }
+};
+
+/* ---------- Filter Gallery ---------- */
+DLG.filterGallery = function () {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('اختر طبقة صورة');
+  const keys = ADJ_KEYS.filter(k => ['flt', 'sty', 'pix', 'blr', 'shp', 'nse', 'dst'].includes(ADJ[k].g)); const body = document.createElement('div'); body.className = 'fgal';
+  this.open('معرض الفلاتر', body, [btn('إغلاق', () => this.close())], 'wide');
+  const s = Math.min(1, 160 / Math.max(L.canvas.width, L.canvas.height)), small = mkCanvas(Math.max(1, L.canvas.width * s), Math.max(1, L.canvas.height * s)); small.getContext('2d').drawImage(L.canvas, 0, 0, small.width, small.height);
+  let i = 0; const next = () => { if (i >= keys.length || !body.isConnected) return; const k = keys[i++], c = cloneCanvas(small); try { runAdj(k, c, adjDefaults(k)); } catch { } const b = document.createElement('button'); b.className = 'fgal-it'; b.append(c); const n = document.createElement('span'); n.textContent = ADJ[k].n; b.append(n); b.onclick = () => { this.close(); DLG.adjust(k); }; body.appendChild(b); setTimeout(next, 0); }; next();
+};
+
+/* ---------- Photoshop Filter menu (same order as the video) ---------- */
+(() => {
+  const F = MENUS.find(m => m[0] === 'فلتر'); const looks = F[1].slice(F[1].findIndex(it => Array.isArray(it) && it[0] === 'grp' && it[1] === 'فلاتر جاهزة'));
+  const G = { blr: ['blur', 'motion', 'radialblur', 'boxblur', 'surface'], blg: ['tiltshift'], dst: ['twirl', 'wave', 'ripple', 'spherize', 'polar'], nse: ['noise', 'median', 'dust', 'denoise', 'despeckle'], pix: ['pixelate', 'crystal', 'halftone'], rnd: ['clouds', 'diffclouds', 'fibers', 'flare', 'lightleak', 'sky', 'bloom'], shp: ['sharpen', 'unsharp', 'smartsharp'], sty: ['emboss', 'edges', 'diffuse', 'tiles', 'oil', 'sketch', 'cartoon', 'glitch', 'rgbsplit', 'oldfilm', 'vignette'], oth: ['highpass', 'minimum', 'maximum', 'offset'] };
+  const NAMES = { blr: 'تمويه (Blur)', blg: 'معرض التمويه (Blur Gallery)', dst: 'تشويه (Distort)', nse: 'تشويش (Noise)', pix: 'بكسلة (Pixelate)', rnd: 'إخراج (Render)', shp: 'زيادة الحدة (Sharpen)', sty: 'أسلوب (Stylize)', oth: 'أخرى (Other)' };
+  const items = [['آخر فلتر', 'Ctrl+Alt+F', lastFilter], '-', ['تحويل للفلاتر الذكية', '', toSmart], '-', ['الفلاتر العصبية…', '', () => DLG.neural()], ['معرض الفلاتر…', '', () => DLG.filterGallery()], ['زاوية عريضة تكيفية…', 'Alt+Shift+Ctrl+A', () => DLG.lens('زاوية عريضة تكيفية')], ['فلتر Camera Raw…', 'Shift+Ctrl+A', () => DLG.cameraRaw()], ['تصحيح العدسة…', 'Shift+Ctrl+R', () => DLG.lens()], ['تسييل…', 'Shift+Ctrl+X', () => pickTool('liquify')], ['نقطة التلاشي…', 'Alt+Ctrl+V', () => { WARP.start('persp'); toast('نقطة التلاشي: اسحب الزوايا الأربع لتطابق سطح الجدار/الأرض ثم Enter', 4000); }], '-'];
+  Object.entries(G).forEach(([g, ks]) => { const list = ks.filter(k => ADJ[k]); if (!list.length) return; items.push(['grp', NAMES[g]], ...list.map(k => [ADJ[k].n + '…', '', () => DLG.adjust(k)])); });
+  const used = new Set(Object.values(G).flat()); const rest = ADJ_KEYS.filter(k => ADJ[k].g === 'flt' && !used.has(k)); if (rest.length) items.push(['grp', 'المزيد'], ...rest.map(k => [ADJ[k].n + '…', '', () => DLG.adjust(k)]));
+  items.push('-', ...looks); F[1] = items;
+  document.addEventListener('keydown', e => { if ($('#ws-design').hidden || (e.target.closest && e.target.closest('input,textarea,select'))) return; const c = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    if (c && e.altKey && !e.shiftKey && k === 'f') { e.preventDefault(); e.stopImmediatePropagation(); lastFilter(); }
+    else if (c && e.shiftKey && !e.altKey && k === 'a') { e.preventDefault(); e.stopImmediatePropagation(); DLG.cameraRaw(); }
+    else if (c && e.shiftKey && !e.altKey && k === 'r') { e.preventDefault(); e.stopImmediatePropagation(); DLG.lens(); }
+    else if (c && e.altKey && !e.shiftKey && k === 'v') { e.preventDefault(); e.stopImmediatePropagation(); WARP.start('persp'); } }, true);
+})();
+
+/* ---------- one-click version of the video's acne technique ---------- */
+function skinRetouchVivid(radius) {
+  const L = photoLayer(); if (!L || L.type === 'adj') return toast('افتح صورة الوجه أولاً'); if (L.type === 'text') rasterize(L);
+  const r = radius || Math.max(4, Math.round(Math.min(S.doc.w, S.doc.h) / 110));
+  const C = { ...JSON.parse(JSON.stringify(layerProps(L))), id: uid(), name: L.name + ' — تنعيم (Vivid Light)', canvas: cloneCanvas(L.canvas), ver: ++VER };
+  C.blend = 'vivid-light'; runAdj('invert', C.canvas, {}); runAdj('highpass', C.canvas, { r }); runAdj('blur', C.canvas, { r: Math.max(1, r / 3) });
+  const M = mkCanvas(S.doc.w, S.doc.h); C._mask = M; C.maskEdit = true; delete C.group;
+  S.layers.splice(S.layers.indexOf(L) + 1, 0, C); S.active = C.id; requestRender(); commit('تنعيم البشرة (طريقة الفيديو)');
+  pickTool('brush'); Object.assign(S.opts.brush, { tip: 'round', tipName: 'دائري ناعم', hardness: 0, opacity: 1, flow: 1, size: Math.round(Math.min(S.doc.w, S.doc.h) / 12) }); S.fg = { r: 255, g: 255, b: 255, a: 1 }; if (typeof COLOR !== 'undefined' && COLOR.refresh) COLOR.refresh(); UI.buildOptbar(); UI.buildToolbar && UI.buildToolbar();
+  toast('جاهز: ارسم بالفرشاة البيضاء على البشرة فتختفي الحبوب — الأسود يرجّعها. (مثل الفيديو بالضبط)', 5000);
+}
+(() => { MENUS.find(m => m[0] === 'صورة')[1].splice(1, 0, ['🧴 تنظيف البشرة من الحبوب (Vivid Light — طريقة الفيديو)', '', () => skinRetouchVivid()]);
+  PANELS.beauty = (orig => function (b) { orig.call(this, b); const a = $('#btAuto'); if (a && !$('#btVivid')) { const v = btn('🧴 تنظيف الحبوب بطريقة المحترفين (Vivid Light)', () => skinRetouchVivid(), 'btn'); v.id = 'btVivid'; a.after(v); } })(PANELS.beauty); })();
+/* ============================== Tool help only while hovering / touching the tool (no close button needed) ============================== */
+HELP.show = (orig => function (t, force) { if (force) return orig.call(this, t, true); this.hide(); })(HELP.show);
+const TIP = {
+  el: null, t: 0,
+  show(id, btnEl, touch) {
+    const base = id.split(':')[0], h = TOOL_HELP[base] || TOOL_HELP[id]; const meta = TMETA[id] || [TOOL_NAMES[base] || base, '', base];
+    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'tip-card'; this.el.setAttribute('role', 'tooltip'); document.body.appendChild(this.el); }
+    this.el.innerHTML = `<div class="tc-top">${ICONS[meta[2]] || ''}<b>${esc(meta[0])}</b>${meta[1] ? `<kbd>${meta[1]}</kbd>` : ''}</div>${h ? `<p>${esc(h[0])}</p>${h[1] && h[1].length > 1 ? `<ol>${h[1].map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}` : ''}`;
+    this.el.hidden = false; const r = btnEl.getBoundingClientRect(), w = this.el.offsetWidth, hh = this.el.offsetHeight;
+    let left = r.right + 10; if (left + w > window.innerWidth - 8) left = r.left - w - 10; if (left < 8) left = 8;
+    this.el.style.left = left + 'px'; this.el.style.top = Math.max(8, Math.min(window.innerHeight - hh - 8, r.top - 6)) + 'px';
+    clearTimeout(this.t); if (touch) this.t = setTimeout(() => this.hide(), 2600);
+  },
+  hide() { clearTimeout(this.t); clearTimeout(this.d); if (this.el) this.el.hidden = true; }
+};
+/* hover (mouse) and touch on toolbar buttons and on the tool flyout list */
+document.addEventListener('pointerover', e => {
+  if (e.pointerType === 'touch') return; const b = e.target.closest('#toolbar .tool[data-g], .tflyout button'); if (!b) return;
+  clearTimeout(TIP.d); TIP.d = setTimeout(() => { const id = b.dataset.g != null ? TGCUR[+b.dataset.g] : b.dataset.id; if (id) TIP.show(id, b); }, 380);
+});
+document.addEventListener('pointerout', e => { const b = e.target.closest('#toolbar .tool[data-g], .tflyout button'); if (b && !b.contains(e.relatedTarget)) TIP.hide(); });
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('#toolbar .tool[data-g]');
+  if (b && e.pointerType === 'touch') { setTimeout(() => TIP.show(TGCUR[+b.dataset.g], b, true), 60); return; }
+  if (!e.target.closest('.tip-card')) TIP.hide();
+}, true);
+/* the flyout items know their tool id */
+openFlyout = (orig => function (gi, btnEl) { orig(gi, btnEl); const f = $('.tflyout'); if (f) [...f.querySelectorAll('button')].forEach((b, i) => b.dataset.id = TG[gi][i]); })(openFlyout);
+/* "?" on the zoom bar still opens the full card for the current tool */
 /* ============================== VIDEO EDITOR ============================== */
 const VID = (() => {
   const ASPECTS = { '16:9': [1280, 720], '9:16': [720, 1280], '1:1': [1080, 1080], '4:5': [864, 1080], '4:3': [1024, 768], '21:9': [1344, 576] };
